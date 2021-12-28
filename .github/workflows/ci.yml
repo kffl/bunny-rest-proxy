@@ -1,0 +1,33 @@
+name: CI workflow
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node: [16, 17]
+
+    name: Test on node version ${{ matrix.node }}
+
+    services:
+      rabbitmq:
+        image: rabbitmq:3.9.11-management
+        ports:
+          - 5672:5672
+
+    steps:
+    - uses: actions/checkout@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+
+    - name: Install
+      run: npm install
+
+    - name: Lint
+      run: npm run lint
+
+    - name: Run tests
+      run: npm run test
