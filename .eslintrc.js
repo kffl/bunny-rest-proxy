@@ -13,6 +13,7 @@ module.exports = {
     plugins: ['@typescript-eslint', 'prettier'],
     rules: {
         'no-console': 1,
-        'prettier/prettier': 2
+        'prettier/prettier': 2,
+        '@typescript-eslint/ban-ts-comment': 'off'
     }
 };
