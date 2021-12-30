@@ -22,6 +22,7 @@ export class Publisher {
         protected readonly channel: ConfirmChannel,
         protected readonly messageParser: MessageParser
     ) {}
+    public messagesInFlight = 0;
     public assertQueue() {
         return this.channel.assertQueue(this.queueName, { durable: true });
     }
@@ -41,11 +42,13 @@ export class Publisher {
         const uuid = randomUUID();
         const validatedMessage = this.messageParser.validateMessage(payload);
         try {
+            this.messagesInFlight++;
             await this.channel.sendToQueue(this.queueName, validatedMessage, {
                 persistent: headers['x-bunny-persistent'] !== 'false',
                 contentType: headers['content-type'],
                 messageId: uuid
             });
+            this.messagesInFlight--;
             return { contentLengthBytes: validatedMessage.length, messageId: uuid };
         } catch (e) {
             log.error(`publishing to queue ${this.queueName} failed: ${(e as Error)?.message}`);

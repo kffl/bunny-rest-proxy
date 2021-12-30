@@ -1,8 +1,10 @@
 import { fastify, FastifyInstance } from 'fastify';
 import fastifyAmqpAsync from 'fastify-amqp-async';
+import fastifyGracefulShutdown from 'fastify-graceful-shutdown';
 import { IncomingMessage, Server, ServerResponse } from 'http';
 import { EnvConfig } from './config/env-config';
 import { YamlConfig } from './config/yaml-config';
+import { gracefullyHandleConsumerShutdown, sleep } from './lifecycle';
 import buildPublisher from './publisher/build-publisher';
 import { Publisher, PublishRequestHeaders } from './publisher/publisher';
 
@@ -11,6 +13,16 @@ export type AppInstance = FastifyInstance<Server, IncomingMessage, ServerRespons
 declare module 'fastify' {
     export interface FastifyInstance {
         publishers: Array<Publisher>;
+        /**
+         * In pendingShutdown state, the server is handling a graceful shutdown during which
+         * all incoming requests will receive 503 HTTP code while all the existing ones will
+         * continue processing. It will also wait for consumers to finish processing messages.
+         */
+        pendingShutdown: boolean;
+        /**
+         * Error shutdown occurs when an AMQP channel or connection is closed unexpectedly.
+         */
+        errorShutdown: boolean;
     }
 }
 
@@ -27,6 +39,8 @@ function buildApp(envConfig: EnvConfig, yamlConfig: YamlConfig): AppInstance {
     });
 
     app.decorate('publishers', [] as Array<Publisher>);
+    app.decorate('pendingShutdown', false);
+    app.decorate('errorShutdown', false);
 
     app.get('/', (req, res) => {
         res.send(`Hello from Bunny REST Proxy`);
@@ -38,9 +52,12 @@ function buildApp(envConfig: EnvConfig, yamlConfig: YamlConfig): AppInstance {
         done(null, body);
     });
 
+    app.register(fastifyGracefulShutdown);
+
     app.register(fastifyAmqpAsync, {
         connectionString: envConfig.connectionString,
-        useConfirmChannel: true
+        useConfirmChannel: true,
+        ignoreOnClose: true
     }).after((err) => {
         if (err) {
             app.log.fatal(`Error connecting to RabbitMQ, message: ${(err as Error)?.message}`);
@@ -63,17 +80,40 @@ function buildApp(envConfig: EnvConfig, yamlConfig: YamlConfig): AppInstance {
 
     app.addHook('onReady', async () => {
         app.amqp.connection.on('close', () => {
-            app.log.info('AMQP connection closed. Shutting down...');
-            app.close();
+            if (app.pendingShutdown) {
+                app.log.info('AMQP connection was closed.');
+            } else if (!app.errorShutdown) {
+                app.errorShutdown = true;
+                app.log.fatal('AMQP connection was closed unexpectedly. BRP is shutting down');
+                app.close();
+            }
         });
         app.amqp.confirmChannel.on('close', () => {
-            app.log.info('AMQP channel closed. Shutting down...');
-            app.close();
+            if (app.pendingShutdown) {
+                app.log.info('AMQP channel was closed.');
+            } else if (!app.errorShutdown) {
+                app.errorShutdown = true;
+                app.log.fatal('AMQP channel was closed unexpectedly. BRP is shutting down');
+                app.amqp.connection.close();
+                app.close();
+            }
         });
 
         for (const publisher of app.publishers) {
             await publisher.assertQueue();
         }
+    });
+
+    app.addHook('onClose', async (instance) => {
+        await gracefullyHandleConsumerShutdown(app);
+    });
+
+    app.after(() => {
+        app.gracefulShutdown((signal, next) => {
+            app.log.info('Starting graceful shutdown sequence.');
+            app.pendingShutdown = true;
+            next();
+        });
     });
 
     return app;
