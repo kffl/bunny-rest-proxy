@@ -7,6 +7,8 @@ import { PublisherErrors } from './errors';
 
 interface MessageHeaders {
     'x-bunny-persistent'?: string;
+    'x-bunny-correlationid'?: string;
+    'x-bunny-appid'?: string;
 }
 
 export type PublishRequestHeaders = MessageHeaders & { 'content-type': MessageContentType };
@@ -46,6 +48,8 @@ export class Publisher {
             await this.channel.sendToQueue(this.queueName, validatedMessage, {
                 persistent: headers['x-bunny-persistent'] !== 'false',
                 contentType: headers['content-type'],
+                correlationId: headers['x-bunny-correlationid'],
+                appId: headers['x-bunny-appid'],
                 messageId: uuid
             });
             this.messagesInFlight--;
