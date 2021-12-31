@@ -11,17 +11,29 @@ export interface PublisherConfig {
     queueName: string;
     contentType: PublisherContentTypes;
     schema?: object;
+    confirm: boolean;
 }
 
 // TODO - parse input yaml file and build config
 export function buildYamlConfig(): YamlConfig {
     return {
         publishers: [
-            { queueName: 'binaryq', contentType: PublisherContentTypes.BINARY },
+            {
+                queueName: 'binaryq',
+                contentType: PublisherContentTypes.BINARY,
+                confirm: true
+            },
             {
                 queueName: 'jsonq',
                 contentType: PublisherContentTypes.JSON,
-                schema: {}
+                schema: {},
+                confirm: true
+            },
+            {
+                queueName: 'nonconfirm',
+                contentType: PublisherContentTypes.JSON,
+                schema: {},
+                confirm: false
             }
         ]
     };

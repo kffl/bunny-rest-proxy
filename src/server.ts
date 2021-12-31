@@ -4,9 +4,9 @@ import fastifyGracefulShutdown from 'fastify-graceful-shutdown';
 import { IncomingMessage, Server, ServerResponse } from 'http';
 import { EnvConfig } from './config/env-config';
 import { YamlConfig } from './config/yaml-config';
-import { gracefullyHandleConsumerShutdown, sleep } from './lifecycle';
-import buildPublisher from './publisher/build-publisher';
-import { Publisher, PublishRequestHeaders } from './publisher/publisher';
+import { gracefullyHandleConsumerShutdown } from './lifecycle';
+import { registerPublishers } from './publisher/build-publisher';
+import { Publisher } from './publisher/publisher';
 
 export type AppInstance = FastifyInstance<Server, IncomingMessage, ServerResponse>;
 
@@ -57,25 +57,14 @@ function buildApp(envConfig: EnvConfig, yamlConfig: YamlConfig): AppInstance {
     app.register(fastifyAmqpAsync, {
         connectionString: envConfig.connectionString,
         useConfirmChannel: true,
+        useRegularChannel: true,
         ignoreOnClose: true
     }).after((err) => {
         if (err) {
             app.log.fatal(`Error connecting to RabbitMQ, message: ${(err as Error)?.message}`);
             process.exit(1);
         }
-        for (const publisherConfig of yamlConfig.publishers) {
-            const publisher = buildPublisher(publisherConfig, app.amqp.confirmChannel);
-            app.publishers.push(publisher);
-
-            app.post<{ Headers: PublishRequestHeaders; Body: Buffer }>(
-                `/publish/${publisher.queueName}`,
-                async function (req, res) {
-                    const result = publisher.sendMessage(req.headers, req.body, req.log);
-                    res.status(201);
-                    return result;
-                }
-            );
-        }
+        registerPublishers(yamlConfig.publishers, app);
     });
 
     app.addHook('onReady', async () => {
@@ -104,7 +93,7 @@ function buildApp(envConfig: EnvConfig, yamlConfig: YamlConfig): AppInstance {
         }
     });
 
-    app.addHook('onClose', async (instance) => {
+    app.addHook('onClose', async () => {
         await gracefullyHandleConsumerShutdown(app);
     });
 

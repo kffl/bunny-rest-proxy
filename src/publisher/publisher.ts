@@ -1,4 +1,4 @@
-import { ConfirmChannel } from 'amqplib-as-promised';
+import { Channel } from 'amqplib-as-promised';
 import { randomUUID } from 'crypto';
 import { FastifyLoggerInstance } from 'fastify';
 import { MessageContentType } from '../message-parser/content-types';
@@ -19,7 +19,7 @@ export interface MessagePublishResult {
 export class Publisher {
     constructor(
         public readonly queueName: string,
-        protected readonly channel: ConfirmChannel,
+        protected readonly channel: Channel,
         protected readonly messageParser: MessageParser
     ) {}
     public messagesInFlight = 0;

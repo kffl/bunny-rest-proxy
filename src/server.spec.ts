@@ -25,9 +25,18 @@ describe('bunny-rest-proxy instance', () => {
         expect(response.status).toEqual(200);
     });
 
-    it('should allow for posting JSON messages', async () => {
+    it('should allow for posting JSON messages to a channel w/ publisher confirms', async () => {
         const response = await supertest(app.server)
             .post('/publish/jsonq')
+            .send({ ok: true })
+            .set('content-type', 'application/json');
+        expect(response.status).toEqual(201);
+        expect(response.body?.contentLengthBytes).toEqual(11);
+    });
+
+    it('should allow for posting JSON messages to a channel w/o publisher confirms', async () => {
+        const response = await supertest(app.server)
+            .post('/publish/nonconfirm')
             .send({ ok: true })
             .set('content-type', 'application/json');
         expect(response.status).toEqual(201);
