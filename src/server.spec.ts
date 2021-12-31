@@ -34,6 +34,15 @@ describe('bunny-rest-proxy instance', () => {
         expect(response.body?.contentLengthBytes).toEqual(11);
     });
 
+    it('should allow for posting binary messages to a channel w/ publisher confirms', async () => {
+        const response = await supertest(app.server)
+            .post('/publish/binaryq')
+            .send('some payload')
+            .set('content-type', 'application/octet-stream');
+        expect(response.status).toEqual(201);
+        expect(response.body?.contentLengthBytes).toEqual(12);
+    });
+
     it('should allow for posting JSON messages to a channel w/o publisher confirms', async () => {
         const response = await supertest(app.server)
             .post('/publish/nonconfirm')
@@ -57,6 +66,28 @@ describe('bunny-rest-proxy instance', () => {
             .send("{ouch, this doesn't look like json")
             .set('content-type', 'application/json');
         expect(response.status).toEqual(400);
+    });
+
+    it('should retrieve a message from a channel via GET', async () => {
+        const response = await supertest(app.server).get('/consume/nonconfirm');
+        expect(response.status).toEqual(205);
+        expect(response.body).toBeDefined();
+        expect(response.headers['content-length']).toEqual('11');
+        expect(response.headers['x-bunny-message-count']).toEqual('0');
+    });
+
+    it('should return a 423 code when the queue is empty', async () => {
+        const response = await supertest(app.server).get('/consume/nonconfirm');
+        expect(response.status).toEqual(423);
+        expect(response.body).toBeDefined();
+    });
+
+    it('should retrieve a binary message from a channel via GET', async () => {
+        const response = await supertest(app.server).get('/consume/binaryq');
+        expect(response.status).toEqual(205);
+        expect(response.body).toBeDefined();
+        expect(response.headers['content-length']).toEqual('12');
+        expect(response.headers['x-bunny-message-count']).toEqual('0');
     });
 
     afterAll(async () => {

@@ -1,5 +1,6 @@
 export interface YamlConfig {
     publishers: Array<PublisherConfig>;
+    consumers: Array<ConsumerConfig>;
 }
 
 export enum PublisherContentTypes {
@@ -12,6 +13,10 @@ export interface PublisherConfig {
     contentType: PublisherContentTypes;
     schema?: object;
     confirm: boolean;
+}
+
+export interface ConsumerConfig {
+    queueName: string;
 }
 
 // TODO - parse input yaml file and build config
@@ -35,6 +40,7 @@ export function buildYamlConfig(): YamlConfig {
                 schema: {},
                 confirm: false
             }
-        ]
+        ],
+        consumers: [{ queueName: 'nonconfirm' }, { queueName: 'binaryq' }]
     };
 }
