@@ -1,4 +1,7 @@
 {
   "ts.editor.formatOnSave": true,
-  "cSpell.words": ["fastify"]
+  "cSpell.words": [
+    "fastify",
+    "prefetch"
+  ]
 }

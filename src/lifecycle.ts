@@ -1,5 +1,6 @@
 import { Publisher } from './publisher/publisher';
 import { AppInstance } from './server';
+import { Subscriber } from './subscriber/subscriber';
 
 export function totalMessagesInFlight(publishers: Array<Publisher>): number {
     let messagesInFlight = 0;
@@ -9,29 +10,34 @@ export function totalMessagesInFlight(publishers: Array<Publisher>): number {
     return messagesInFlight;
 }
 
-// TODO
-function totalConsumerMessagesProcessed(): number {
-    return 0;
+function subscriberDeliveriesInFlight(subscribers: Array<Subscriber>): number {
+    return subscribers.reduce((prev, current) => {
+        return prev + current.inFlightPushRequests;
+    }, 0);
 }
 
-export async function gracefullyHandleConsumerShutdown(app: AppInstance) {
+export async function gracefullyHandleSubscriberShutdown(app: AppInstance) {
     app.pendingShutdown = true;
+
     if (!app.errorShutdown) {
-        app.log.info('Checking for consumers with un-processed messages');
+        app.log.info('Cancelling all subscribers');
+        await Promise.all(app.subscribers.map((s) => s.stop(false)));
+
+        app.log.info('Checking for subscribers with un-processed messages');
 
         let retries = 0;
         while (retries < 5) {
             retries++;
-            // TODO - check if consumers have messages that are being processed
-            if (totalConsumerMessagesProcessed() === 0) {
+            const deliveriesInFlight = subscriberDeliveriesInFlight(app.subscribers);
+            if (deliveriesInFlight === 0) {
                 app.log.info(
-                    'No consumer messages in processing detected. Closing the AMQP connection.'
+                    'No subscriber messages delivered via in-flight requests detected. Closing the AMQP connection.'
                 );
                 await app.amqp.connection.close();
                 return;
             } else {
                 app.log.warn(
-                    `Some consumers have messages that are still being processed. Waiting 1s for retry #${retries}`
+                    `Some subscribers are pushing messages that are still in-flight (${deliveriesInFlight}). Waiting 1s for retry #${retries}`
                 );
                 await sleep(1000);
             }
@@ -39,6 +45,29 @@ export async function gracefullyHandleConsumerShutdown(app: AppInstance) {
 
         app.log.warn('Maximum number of retries exceeded. Forcefully closing the connection.');
         await app.amqp.connection.close();
+    } else {
+        app.subscribers.forEach((s) => s.stop(true));
+    }
+}
+
+export function handleConnectionClose(app: AppInstance) {
+    if (app.pendingShutdown) {
+        app.log.info('AMQP connection was closed.');
+    } else if (!app.errorShutdown) {
+        app.errorShutdown = true;
+        app.log.fatal('AMQP connection was closed unexpectedly. BRP is shutting down');
+        app.close();
+    }
+}
+
+export function handleChannelClose(app: AppInstance, isConfirmChannel: boolean) {
+    if (app.pendingShutdown) {
+        app.log.info(`AMQP ${isConfirmChannel ? 'confirm ' : ''}channel was closed.`);
+    } else if (!app.errorShutdown) {
+        app.errorShutdown = true;
+        app.log.fatal('AMQP channel was closed unexpectedly. BRP is shutting down');
+        app.amqp.connection.close();
+        app.close();
     }
 }
 

@@ -6,9 +6,15 @@ import { EnvConfig } from './config/env-config';
 import { YamlConfig } from './config/yaml-config';
 import { registerConsumers } from './consumer/build-consumer';
 import { Consumer } from './consumer/consumer';
-import { gracefullyHandleConsumerShutdown } from './lifecycle';
+import {
+    gracefullyHandleSubscriberShutdown,
+    handleChannelClose,
+    handleConnectionClose
+} from './lifecycle';
 import { registerPublishers } from './publisher/build-publisher';
 import { Publisher } from './publisher/publisher';
+import { registerSubscribers } from './subscriber/build-subscriber';
+import { Subscriber } from './subscriber/subscriber';
 
 export type AppInstance = FastifyInstance<Server, IncomingMessage, ServerResponse>;
 
@@ -16,6 +22,7 @@ declare module 'fastify' {
     export interface FastifyInstance {
         publishers: Array<Publisher>;
         consumers: Array<Consumer>;
+        subscribers: Array<Subscriber>;
         /**
          * In pendingShutdown state, the server is handling a graceful shutdown during which
          * all incoming requests will receive 503 HTTP code while all the existing ones will
@@ -43,6 +50,7 @@ function buildApp(envConfig: EnvConfig, yamlConfig: YamlConfig): AppInstance {
 
     app.decorate('publishers', [] as Array<Publisher>);
     app.decorate('consumers', [] as Array<Consumer>);
+    app.decorate('subscribers', [] as Array<Subscriber>);
     app.decorate('pendingShutdown', false);
     app.decorate('errorShutdown', false);
 
@@ -71,36 +79,30 @@ function buildApp(envConfig: EnvConfig, yamlConfig: YamlConfig): AppInstance {
 
         registerPublishers(yamlConfig.publishers, app);
         registerConsumers(yamlConfig.consumers, app);
+        registerSubscribers(yamlConfig.subscribers, app);
     });
 
     app.addHook('onReady', async () => {
         app.amqp.connection.on('close', () => {
-            if (app.pendingShutdown) {
-                app.log.info('AMQP connection was closed.');
-            } else if (!app.errorShutdown) {
-                app.errorShutdown = true;
-                app.log.fatal('AMQP connection was closed unexpectedly. BRP is shutting down');
-                app.close();
-            }
+            handleConnectionClose(app);
         });
         app.amqp.confirmChannel.on('close', () => {
-            if (app.pendingShutdown) {
-                app.log.info('AMQP channel was closed.');
-            } else if (!app.errorShutdown) {
-                app.errorShutdown = true;
-                app.log.fatal('AMQP channel was closed unexpectedly. BRP is shutting down');
-                app.amqp.connection.close();
-                app.close();
-            }
+            handleChannelClose(app, true);
+        });
+        app.amqp.channel.on('close', () => {
+            handleChannelClose(app, false);
         });
 
         for (const publisher of app.publishers) {
             await publisher.assertQueue();
         }
+        for (const subscriber of app.subscribers) {
+            await subscriber.start();
+        }
     });
 
     app.addHook('onClose', async () => {
-        await gracefullyHandleConsumerShutdown(app);
+        await gracefullyHandleSubscriberShutdown(app);
     });
 
     app.after(() => {

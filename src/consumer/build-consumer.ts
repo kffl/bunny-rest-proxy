@@ -1,5 +1,4 @@
 import { ConsumerConfig } from '../config/yaml-config';
-import { Publisher } from '../publisher/publisher';
 import { AppInstance } from '../server';
 import { Consumer } from './consumer';
 
