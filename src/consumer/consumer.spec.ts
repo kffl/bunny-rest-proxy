@@ -1,42 +1,27 @@
 import { Channel } from 'amqplib-as-promised/lib';
 import { Consumer } from './consumer';
 import { ConsumerErrors } from './errors';
-
-const mockGet = jest.fn(() => Promise.resolve({ content: Buffer.from('some payload') }));
-const mockGetEmpty = jest.fn(() => Promise.resolve(false));
-const mockGetFail = jest.fn(() => Promise.reject());
-
-//@ts-ignore
-const mockChannel = {
-    get: mockGet
-} as Channel;
-
-//@ts-ignore
-const mockChannelEmpty = {
-    get: mockGetEmpty
-} as Channel;
-
-//@ts-ignore
-const mockChannelFailing = {
-    get: mockGetFail
-} as Channel;
+import { Message } from 'amqplib';
+import { mock, mockClear } from 'jest-mock-extended';
 
 describe('Consumer class', () => {
+    const channel = mock<Channel>();
     beforeEach(() => {
-        mockGet.mockClear();
-        mockGetFail.mockClear();
+        mockClear(channel);
     });
 
     it('should return a message if get succeeds', async () => {
-        const c = new Consumer('somequeue', mockChannel);
+        channel.get.mockResolvedValue({ content: Buffer.from('some payload') } as Message);
+        const c = new Consumer('somequeue', channel);
         const message = await c.getMessage();
         expect(message.content).toEqual(Buffer.from('some payload'));
-        expect(mockGet).toHaveBeenCalledTimes(1);
-        expect(mockGet).toHaveBeenCalledWith('somequeue', { noAck: true });
+        expect(channel.get).toHaveBeenCalledTimes(1);
+        expect(channel.get).toHaveBeenCalledWith('somequeue', { noAck: true });
     });
 
     it('should throw an error if queue is empty', async () => {
-        const c = new Consumer('somequeue', mockChannelEmpty);
+        channel.get.mockResolvedValue(false);
+        const c = new Consumer('somequeue', channel);
         const t = async () => {
             await c.getMessage();
         };
@@ -44,7 +29,8 @@ describe('Consumer class', () => {
     });
 
     it('should throw an error if queue is unavailable', async () => {
-        const c = new Consumer('somequeue', mockChannelFailing);
+        channel.get.mockRejectedValue('some error');
+        const c = new Consumer('somequeue', channel);
         const t = async () => {
             await c.getMessage();
         };
