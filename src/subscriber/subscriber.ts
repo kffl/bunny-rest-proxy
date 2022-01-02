@@ -3,7 +3,7 @@ import { randomUUID } from 'crypto';
 import { URL } from 'url';
 import fetch from 'node-fetch';
 import { FastifyLoggerInstance } from 'fastify';
-import { SubscriberConfig } from '../config/yaml-config';
+import { SubscriberConfig } from '../config/yaml-config.types';
 
 const isURLValid = (u: string) => {
     try {

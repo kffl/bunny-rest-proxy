@@ -1,86 +1,51 @@
-export interface YamlConfig {
-    publishers: Array<PublisherConfig>;
-    consumers: Array<ConsumerConfig>;
-    subscribers: Array<SubscriberConfig>;
+import yaml from 'js-yaml';
+import Ajv from 'ajv';
+import YamlConfigSchema from './yaml-config.schema.json';
+import {
+    ConsumerConfigDefaults,
+    PublisherConfigDefaults,
+    SubscriberConfigDefaults,
+    YamlConfig
+} from './yaml-config.types';
+
+const ajv = new Ajv();
+const validateConfig = ajv.compile(YamlConfigSchema);
+
+function isValidConfig(parsedYaml: unknown): parsedYaml is YamlConfig {
+    return validateConfig(parsedYaml);
 }
 
-export enum PublisherContentTypes {
-    JSON = 'json',
-    BINARY = 'binary'
-}
-
-export interface PublisherConfig {
-    queueName: string;
-    contentType: PublisherContentTypes;
-    schema?: object;
-    confirm: boolean;
-}
-
-export interface ConsumerConfig {
-    queueName: string;
-}
-
-export interface SubscriberConfig {
-    queueName: string;
-    target: string;
-    prefetch: number;
-    timeout: number;
-    retries: number;
-    retryDelay: number;
-    deadLetterQueueName?: string;
-}
-
-// TODO - parse input yaml file and build config
-export function buildYamlConfig(): YamlConfig {
+export function assignConfigDefaults(cfg: YamlConfig): YamlConfig {
     return {
-        publishers: [
-            {
-                queueName: 'binaryq',
-                contentType: PublisherContentTypes.BINARY,
-                confirm: true
-            },
-            {
-                queueName: 'jsonq',
-                contentType: PublisherContentTypes.JSON,
-                schema: {},
-                confirm: true
-            },
-            {
-                queueName: 'binarytest',
-                contentType: PublisherContentTypes.BINARY,
-                confirm: true
-            },
-            {
-                queueName: 'jsontest',
-                contentType: PublisherContentTypes.JSON,
-                schema: {},
-                confirm: true
-            },
-            {
-                queueName: 'nonconfirm',
-                contentType: PublisherContentTypes.JSON,
-                schema: {},
-                confirm: false
-            }
-        ],
-        consumers: [{ queueName: 'nonconfirm' }, { queueName: 'binaryq' }],
-        subscribers: [
-            {
-                queueName: 'binarytest',
-                target: 'http://localhost:5555/target',
-                prefetch: 1,
-                timeout: 1000,
-                retries: 0,
-                retryDelay: 1000
-            },
-            {
-                queueName: 'jsontest',
-                target: 'http://localhost:5555/target',
-                prefetch: 2,
-                timeout: 1000,
-                retries: 5,
-                retryDelay: 1000
-            }
-        ]
+        publishers: cfg.publishers
+            ? cfg.publishers.map((c) => Object.assign({}, PublisherConfigDefaults, c))
+            : [],
+        consumers: cfg.consumers
+            ? cfg.consumers.map((c) => Object.assign({}, ConsumerConfigDefaults, c))
+            : [],
+        subscribers: cfg.subscribers
+            ? cfg.subscribers.map((c) => Object.assign({}, SubscriberConfigDefaults, c))
+            : []
     };
+}
+
+export function buildYamlConfig(fileContents: string): YamlConfig {
+    let parsedYaml: unknown;
+    try {
+        parsedYaml = yaml.load(fileContents);
+    } catch (e: any) {
+        throw new Error(
+            `Error converting config.yml file to JSON: name ${e?.name}, message ${e.message}`
+        );
+    }
+    if (isValidConfig(parsedYaml)) {
+        return assignConfigDefaults(parsedYaml);
+    } else {
+        validateConfig.errors?.forEach((err) => {
+            console.error(`${err.schemaPath}: ${err.message}`);
+        });
+        throw new Error(
+            'Some errors occurred when validating config file against the schema. See the output above.'
+        );
+    }
 }

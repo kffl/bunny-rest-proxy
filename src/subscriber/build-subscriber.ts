@@ -1,4 +1,4 @@
-import { SubscriberConfig } from '../config/yaml-config';
+import { SubscriberConfig } from '../config/yaml-config.types';
 import { AppInstance } from '../server';
 import { Subscriber } from './subscriber';
 

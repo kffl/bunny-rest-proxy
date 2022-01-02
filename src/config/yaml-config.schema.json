@@ -1,0 +1,104 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "ConsumerConfig": {
+            "properties": {
+                "queueName": {
+                    "type": "string"
+                }
+            },
+            "type": "object",
+            "required": [
+                "queueName"
+            ]
+        },
+        "PublisherConfig": {
+            "properties": {
+                "confirm": {
+                    "type": "boolean"
+                },
+                "contentType": {
+                    "$ref": "#/definitions/PublisherContentTypes"
+                },
+                "queueName": {
+                    "type": "string"
+                },
+                "schema": {
+                    "additionalProperties": true,
+                    "properties": {},
+                    "type": "object"
+                }
+            },
+            "type": "object",
+            "required": [
+                "queueName"
+            ]
+        },
+        "PublisherContentTypes": {
+            "enum": [
+                "binary",
+                "json"
+            ],
+            "type": "string"
+        },
+        "SubscriberConfig": {
+            "properties": {
+                "backoffStrategy": {
+                    "enum": [
+                        "constant",
+                        "exponential",
+                        "linear"
+                    ],
+                    "type": "string"
+                },
+                "deadLetterQueueName": {
+                    "type": "string"
+                },
+                "prefetch": {
+                    "type": "number"
+                },
+                "queueName": {
+                    "type": "string"
+                },
+                "retries": {
+                    "type": "number"
+                },
+                "retryDelay": {
+                    "type": "number"
+                },
+                "target": {
+                    "type": "string"
+                },
+                "timeout": {
+                    "type": "number"
+                }
+            },
+            "type": "object",
+            "required": [
+                "queueName",
+                "target"
+            ]
+        }
+    },
+    "properties": {
+        "consumers": {
+            "items": {
+                "$ref": "#/definitions/ConsumerConfig"
+            },
+            "type": "array"
+        },
+        "publishers": {
+            "items": {
+                "$ref": "#/definitions/PublisherConfig"
+            },
+            "type": "array"
+        },
+        "subscribers": {
+            "items": {
+                "$ref": "#/definitions/SubscriberConfig"
+            },
+            "type": "array"
+        }
+    },
+    "type": "object"
+}

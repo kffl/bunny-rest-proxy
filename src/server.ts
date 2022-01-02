@@ -3,7 +3,7 @@ import fastifyAmqpAsync from 'fastify-amqp-async';
 import fastifyGracefulShutdown from 'fastify-graceful-shutdown';
 import { IncomingMessage, Server, ServerResponse } from 'http';
 import { EnvConfig } from './config/env-config';
-import { YamlConfig } from './config/yaml-config';
+import { YamlConfig } from './config/yaml-config.types';
 import { registerConsumers } from './consumer/build-consumer';
 import { Consumer } from './consumer/consumer';
 import {

@@ -1,4 +1,4 @@
-import { ConsumerConfig } from '../config/yaml-config';
+import { ConsumerConfig } from '../config/yaml-config.types';
 import { AppInstance } from '../server';
 import { Consumer } from './consumer';
 

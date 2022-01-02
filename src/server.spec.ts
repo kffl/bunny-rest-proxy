@@ -2,9 +2,9 @@ import 'jest';
 import buildApp, { AppInstance } from './server';
 import supertest from 'supertest';
 import { buildEnvConfig } from './config/env-config';
-import { buildYamlConfig } from './config/yaml-config';
 import fastify, { FastifyInstance } from 'fastify';
 import { sleep } from './lifecycle';
+import { PublisherContentTypes, YamlConfig } from './config/yaml-config.types';
 
 let app: AppInstance;
 const envConfig = buildEnvConfig({
@@ -12,7 +12,60 @@ const envConfig = buildEnvConfig({
     BRP_CONN_STR: 'amqp://guest:guest@localhost:5672?heartbeat=30',
     BRP_LOG_LEVEL: 'fatal'
 });
-const yamlConfig = buildYamlConfig();
+
+const yamlConfig: YamlConfig = {
+    publishers: [
+        {
+            queueName: 'binaryq',
+            contentType: PublisherContentTypes.BINARY,
+            confirm: true
+        },
+        {
+            queueName: 'jsonq',
+            contentType: PublisherContentTypes.JSON,
+            schema: {},
+            confirm: true
+        },
+        {
+            queueName: 'binarytest',
+            contentType: PublisherContentTypes.BINARY,
+            confirm: true
+        },
+        {
+            queueName: 'jsontest',
+            contentType: PublisherContentTypes.JSON,
+            schema: {},
+            confirm: true
+        },
+        {
+            queueName: 'nonconfirm',
+            contentType: PublisherContentTypes.JSON,
+            schema: {},
+            confirm: false
+        }
+    ],
+    consumers: [{ queueName: 'nonconfirm' }, { queueName: 'binaryq' }],
+    subscribers: [
+        {
+            queueName: 'binarytest',
+            target: 'http://localhost:5555/target',
+            prefetch: 1,
+            timeout: 1000,
+            backoffStrategy: 'linear',
+            retries: 0,
+            retryDelay: 1000
+        },
+        {
+            queueName: 'jsontest',
+            target: 'http://localhost:5555/target',
+            prefetch: 2,
+            timeout: 1000,
+            backoffStrategy: 'linear',
+            retries: 5,
+            retryDelay: 1000
+        }
+    ]
+};
 
 let testTarget: FastifyInstance;
 let shouldRetry = false;

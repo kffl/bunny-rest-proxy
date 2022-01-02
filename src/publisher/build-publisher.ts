@@ -1,5 +1,5 @@
 import { Channel } from 'amqplib-as-promised/lib';
-import { PublisherConfig, PublisherContentTypes } from '../config/yaml-config';
+import { PublisherConfig, PublisherContentTypes } from '../config/yaml-config.types';
 import { BinaryMessageParser } from '../message-parser/binary';
 import { JSONMessageParser } from '../message-parser/json';
 import { MessageParser } from '../message-parser/message-parser';
@@ -11,7 +11,7 @@ function buildPublisher(config: PublisherConfig, amqp: AppInstance['amqp']): Pub
     if (config.contentType === PublisherContentTypes.BINARY) {
         messageParser = new BinaryMessageParser();
     } else {
-        messageParser = new JSONMessageParser();
+        messageParser = new JSONMessageParser(config.schema);
     }
 
     let channel: Channel;
