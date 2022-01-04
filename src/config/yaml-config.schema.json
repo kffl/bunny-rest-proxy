@@ -46,8 +46,11 @@
                 "backoffStrategy": {
                     "enum": [
                         "constant",
+                        "constant-random",
                         "exponential",
-                        "linear"
+                        "exponential-random",
+                        "linear",
+                        "linear-random"
                     ],
                     "type": "string"
                 },
