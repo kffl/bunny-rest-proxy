@@ -81,6 +81,20 @@
                 "queueName",
                 "target"
             ]
+        },
+        "IdentityConfig": {
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "token": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "name"
+            ],
+            "type": "object"
         }
     },
     "properties": {
@@ -99,6 +113,12 @@
         "subscribers": {
             "items": {
                 "$ref": "#/definitions/SubscriberConfig"
+            },
+            "type": "array"
+        },
+        "identities": {
+            "items": {
+                "$ref": "#/definitions/IdentityConfig"
             },
             "type": "array"
         }
