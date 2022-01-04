@@ -3,7 +3,7 @@ import fastifyAmqpAsync from 'fastify-amqp-async';
 import fastifyGracefulShutdown from 'fastify-graceful-shutdown';
 import { IncomingMessage, Server, ServerResponse } from 'http';
 import { EnvConfig } from './config/env-config';
-import { YamlConfig } from './config/yaml-config.types';
+import { IdentityConfig, YamlConfig } from './config/yaml-config.types';
 import { registerConsumers } from './consumer/build-consumer';
 import { Consumer } from './consumer/consumer';
 import {
@@ -23,6 +23,7 @@ declare module 'fastify' {
         publishers: Array<Publisher>;
         consumers: Array<Consumer>;
         subscribers: Array<Subscriber>;
+        identities: Array<IdentityConfig>;
         /**
          * In pendingShutdown state, the server is handling a graceful shutdown during which
          * all incoming requests will receive 503 HTTP code while all the existing ones will
@@ -51,6 +52,7 @@ function buildApp(envConfig: EnvConfig, yamlConfig: YamlConfig): AppInstance {
     app.decorate('publishers', [] as Array<Publisher>);
     app.decorate('consumers', [] as Array<Consumer>);
     app.decorate('subscribers', [] as Array<Subscriber>);
+    app.decorate('identities', yamlConfig.identities);
     app.decorate('pendingShutdown', false);
     app.decorate('errorShutdown', false);
 

@@ -22,7 +22,8 @@ export class Publisher {
     constructor(
         public readonly queueName: string,
         protected readonly channel: Channel,
-        protected readonly messageParser: MessageParser
+        protected readonly messageParser: MessageParser,
+        public readonly identities: Array<string>
     ) {}
     public messagesInFlight = 0;
     public assertQueue() {

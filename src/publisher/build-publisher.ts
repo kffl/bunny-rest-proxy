@@ -1,4 +1,5 @@
 import { Channel } from 'amqplib-as-promised/lib';
+import { AuthorizedRequestHeaders, IdentityGuard } from '../auth/identity-guard';
 import { PublisherConfig, PublisherContentTypes } from '../config/yaml-config.types';
 import { BinaryMessageParser } from '../message-parser/binary';
 import { JSONMessageParser } from '../message-parser/json';
@@ -21,7 +22,7 @@ function buildPublisher(config: PublisherConfig, amqp: AppInstance['amqp']): Pub
         channel = amqp.channel;
     }
 
-    return new Publisher(config.queueName, channel, messageParser);
+    return new Publisher(config.queueName, channel, messageParser, config.identities);
 }
 
 export function registerPublishers(publishersConfig: Array<PublisherConfig>, app: AppInstance) {
@@ -29,9 +30,12 @@ export function registerPublishers(publishersConfig: Array<PublisherConfig>, app
         const publisher = buildPublisher(cfg, app.amqp);
         app.publishers.push(publisher);
 
-        app.post<{ Headers: PublishRequestHeaders; Body: Buffer }>(
+        const identityGuard = new IdentityGuard(publisher, app.identities);
+
+        app.post<{ Headers: PublishRequestHeaders & AuthorizedRequestHeaders; Body: Buffer }>(
             `/publish/${publisher.queueName}`,
             async function (req, res) {
+                identityGuard.verifyRequest(req);
                 const result = publisher.sendMessage(req.headers, req.body, req.log);
                 res.status(201);
                 return result;

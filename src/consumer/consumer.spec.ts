@@ -12,7 +12,7 @@ describe('Consumer class', () => {
 
     it('should return a message if get succeeds', async () => {
         channel.get.mockResolvedValue({ content: Buffer.from('some payload') } as Message);
-        const c = new Consumer('somequeue', channel);
+        const c = new Consumer('somequeue', channel, []);
         const message = await c.getMessage();
         expect(message.content).toEqual(Buffer.from('some payload'));
         expect(channel.get).toHaveBeenCalledTimes(1);
@@ -21,7 +21,7 @@ describe('Consumer class', () => {
 
     it('should throw an error if queue is empty', async () => {
         channel.get.mockResolvedValue(false);
-        const c = new Consumer('somequeue', channel);
+        const c = new Consumer('somequeue', channel, []);
         const t = async () => {
             await c.getMessage();
         };
@@ -30,7 +30,7 @@ describe('Consumer class', () => {
 
     it('should throw an error if queue is unavailable', async () => {
         channel.get.mockRejectedValue('some error');
-        const c = new Consumer('somequeue', channel);
+        const c = new Consumer('somequeue', channel, []);
         const t = async () => {
             await c.getMessage();
         };

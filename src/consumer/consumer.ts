@@ -2,7 +2,11 @@ import { Channel, Message } from 'amqplib-as-promised/lib';
 import { ConsumerErrors } from './errors';
 
 export class Consumer {
-    constructor(public readonly queueName: string, private readonly channel: Channel) {}
+    constructor(
+        public readonly queueName: string,
+        private readonly channel: Channel,
+        public readonly identities: Array<string>
+    ) {}
     public messagesCurrentlyAwaitedOn = 0;
     public async getMessage(): Promise<Message> {
         let message: Message | false;

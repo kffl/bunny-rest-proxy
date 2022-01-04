@@ -18,33 +18,48 @@ const yamlConfig: YamlConfig = {
         {
             queueName: 'binaryq',
             contentType: PublisherContentTypes.BINARY,
-            confirm: true
+            confirm: true,
+            identities: []
         },
         {
             queueName: 'jsonq',
             contentType: PublisherContentTypes.JSON,
             schema: {},
-            confirm: true
+            confirm: true,
+            identities: []
         },
         {
             queueName: 'binarytest',
             contentType: PublisherContentTypes.BINARY,
-            confirm: true
+            confirm: true,
+            identities: []
         },
         {
             queueName: 'jsontest',
             contentType: PublisherContentTypes.JSON,
             schema: {},
-            confirm: true
+            confirm: true,
+            identities: []
         },
         {
             queueName: 'nonconfirm',
             contentType: PublisherContentTypes.JSON,
             schema: {},
-            confirm: false
+            confirm: false,
+            identities: []
+        },
+        {
+            queueName: 'auth',
+            contentType: PublisherContentTypes.BINARY,
+            confirm: true,
+            identities: ['Bob']
         }
     ],
-    consumers: [{ queueName: 'nonconfirm' }, { queueName: 'binaryq' }],
+    consumers: [
+        { queueName: 'nonconfirm', identities: [] },
+        { queueName: 'binaryq', identities: [] },
+        { queueName: 'auth', identities: ['Alice'] }
+    ],
     subscribers: [
         {
             queueName: 'binarytest',
@@ -63,6 +78,16 @@ const yamlConfig: YamlConfig = {
             backoffStrategy: 'linear',
             retries: 5,
             retryDelay: 1000
+        }
+    ],
+    identities: [
+        {
+            name: 'Bob',
+            token: 'THISisBOBSsuperSECRETauthToken123'
+        },
+        {
+            name: 'Alice',
+            token: 'THISisALICESkindaSECRETauthToken123'
         }
     ]
 };
@@ -146,7 +171,7 @@ describe('bunny-rest-proxy instance', () => {
         expect(response.body?.contentLengthBytes).toEqual(11);
     });
 
-    it('should reject binary data sent to JSON producer', async () => {
+    it('should reject binary data sent to JSON publisher', async () => {
         const response = await supertest(app.server)
             .post('/publish/jsonq')
             .send('binarystuff')
@@ -154,12 +179,40 @@ describe('bunny-rest-proxy instance', () => {
         expect(response.status).toEqual(415);
     });
 
-    it('should reject invalid JSON sent to JSON producer', async () => {
+    it('should reject invalid JSON sent to JSON publisher', async () => {
         const response = await supertest(app.server)
             .post('/publish/jsonq')
             .send("{ouch, this doesn't look like json")
             .set('content-type', 'application/json');
         expect(response.status).toEqual(400);
+    });
+
+    it('should reject message publish request without auth headers sent to identity-limited queue', async () => {
+        const response = await supertest(app.server)
+            .post('/publish/auth')
+            .send('message content')
+            .set('content-type', 'application/octet-stream');
+        expect(response.status).toEqual(403);
+    });
+
+    it('should reject message publish request sent with invalid auth credentials', async () => {
+        const response = await supertest(app.server)
+            .post('/publish/auth')
+            .send('message content')
+            .set('X-Bunny-Identity', 'Bob')
+            .set('X-Bunny-Token', 'doesntlooklikeBobstoken')
+            .set('content-type', 'application/octet-stream');
+        expect(response.status).toEqual(403);
+    });
+
+    it('should allow message publish request sent with valid auth credentials', async () => {
+        const response = await supertest(app.server)
+            .post('/publish/auth')
+            .send('message content')
+            .set('X-Bunny-Identity', 'Bob')
+            .set('X-Bunny-Token', 'THISisBOBSsuperSECRETauthToken123')
+            .set('content-type', 'application/octet-stream');
+        expect(response.status).toEqual(201);
     });
 
     it('should retrieve a message from a channel via GET', async () => {
@@ -182,6 +235,22 @@ describe('bunny-rest-proxy instance', () => {
         expect(response.body).toBeDefined();
         expect(response.headers['content-length']).toEqual('12');
         expect(response.headers['x-bunny-message-count']).toEqual('0');
+    });
+
+    it('should prevent an anonymous request from getting a message from a consumer of identity-protected queue', async () => {
+        const response = await supertest(app.server)
+            .get('/consume/auth')
+            .set('X-Bunny-Identity', 'Bob')
+            .set('X-Bunny-Token', 'THISisBOBSsuperSECRETauthToken123');
+        expect(response.status).toEqual(403);
+    });
+
+    it('should allow an authorized request to get a message from a consumer of identity-protected queue', async () => {
+        const response = await supertest(app.server)
+            .get('/consume/auth')
+            .set('X-Bunny-Identity', 'Alice')
+            .set('X-Bunny-Token', 'THISisALICESkindaSECRETauthToken123');
+        expect(response.status).toEqual(205);
     });
 
     it('should push a message to a subscriber via HTTP POST', async () => {
