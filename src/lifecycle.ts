@@ -12,7 +12,7 @@ export function totalMessagesInFlight(publishers: Array<Publisher>): number {
 
 function subscriberDeliveriesInFlight(subscribers: Array<Subscriber>): number {
     return subscribers.reduce((prev, current) => {
-        return prev + current.inFlightPushRequests;
+        return prev + current.inFlightPushRequests + current.inFlightPushRetries;
     }, 0);
 }
 
@@ -23,7 +23,7 @@ export async function gracefullyHandleSubscriberShutdown(app: AppInstance) {
         app.log.info('Cancelling all subscribers');
         await Promise.all(app.subscribers.map((s) => s.stop(false)));
 
-        app.log.info('Checking for subscribers with un-processed messages');
+        app.log.info('Checking for subscribers with HTTP push messages in-flight');
 
         let retries = 0;
         while (retries < 5) {
@@ -31,7 +31,7 @@ export async function gracefullyHandleSubscriberShutdown(app: AppInstance) {
             const deliveriesInFlight = subscriberDeliveriesInFlight(app.subscribers);
             if (deliveriesInFlight === 0) {
                 app.log.info(
-                    'No subscriber messages delivered via in-flight requests detected. Closing the AMQP connection.'
+                    'No subscribers with in-flight HTTP push message deliveries detected. Closing the AMQP connection.'
                 );
                 await app.amqp.connection.close();
                 return;

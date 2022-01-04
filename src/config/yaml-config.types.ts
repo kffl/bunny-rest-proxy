@@ -25,7 +25,13 @@ export interface SubscriberConfig {
     target: string;
     prefetch: number;
     timeout: number;
-    backoffStrategy: 'exponential' | 'linear' | 'constant';
+    backoffStrategy:
+        | 'exponential'
+        | 'exponential-random'
+        | 'linear'
+        | 'linear-random'
+        | 'constant'
+        | 'constant-random';
     retries: number;
     retryDelay: number;
     deadLetterQueueName?: string;
