@@ -35,6 +35,12 @@ const yamlConfig: YamlConfig = {
             identities: []
         },
         {
+            queueName: 'binarytestdiscard',
+            contentType: PublisherContentTypes.BINARY,
+            confirm: true,
+            identities: []
+        },
+        {
             queueName: 'jsontest',
             contentType: PublisherContentTypes.JSON,
             schema: {},
@@ -58,6 +64,7 @@ const yamlConfig: YamlConfig = {
     consumers: [
         { queueName: 'nonconfirm', identities: [] },
         { queueName: 'binaryq', identities: [] },
+        { queueName: 'binarytestdiscard', identities: [] },
         { queueName: 'auth', identities: ['Alice'] }
     ],
     subscribers: [
@@ -68,7 +75,18 @@ const yamlConfig: YamlConfig = {
             timeout: 1000,
             backoffStrategy: 'linear',
             retries: 0,
-            retryDelay: 1000
+            retryDelay: 1000,
+            deadLetterPolicy: 'requeue'
+        },
+        {
+            queueName: 'binarytestdiscard',
+            target: 'http://localhost:5555/target',
+            prefetch: 1,
+            timeout: 1000,
+            backoffStrategy: 'linear',
+            retries: 0,
+            retryDelay: 1000,
+            deadLetterPolicy: 'discard'
         },
         {
             queueName: 'jsontest',
@@ -77,7 +95,8 @@ const yamlConfig: YamlConfig = {
             timeout: 1000,
             backoffStrategy: 'linear',
             retries: 5,
-            retryDelay: 1000
+            retryDelay: 1000,
+            deadLetterPolicy: 'requeue'
         }
     ],
     identities: [
@@ -319,9 +338,23 @@ describe('bunny-rest-proxy instance', () => {
         });
     });
 
+    it('should discard a message message after exceeding the delivery attempts limit', async () => {
+        shouldRetry = true;
+        const response = await supertest(app.server)
+            .post('/publish/binarytestdiscard')
+            .send('convoluted-test-case')
+            .set('content-type', 'application/octet-stream')
+            .set('X-Bunny-CorrelationID', 'fail-dont-retry-ack-dont-reprocess');
+        await sleep(3000);
+        expect(response.status).toEqual(201);
+        expect(targetReqHandler).toHaveBeenCalledTimes(1);
+        const getResponse = await supertest(app.server).get('/consume/binarytestdiscard');
+        expect(getResponse.status).toEqual(423);
+    });
+
     it('should exit gracefully', async () => {
         await app.close();
-        await sleep(3000);
+        await sleep(1000);
     });
 
     afterAll(async () => {

@@ -54,6 +54,14 @@
                     ],
                     "type": "string"
                 },
+                "deadLetterPolicy": {
+                    "enum": [
+                        "requeue",
+                        "discard",
+                        "dql"
+                    ],
+                    "type": "string"
+                },
                 "deadLetterQueueName": {
                     "type": "string"
                 },

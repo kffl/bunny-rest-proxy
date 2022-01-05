@@ -58,6 +58,16 @@ function ensureNoMissingIdentities(cfg: YamlConfig) {
     }
 }
 
+function ensureNoMissingDLQNames(cfg: YamlConfig) {
+    for (const subscriber of cfg.subscribers) {
+        if (subscriber.deadLetterPolicy === 'dlq' && !subscriber.deadLetterQueueName) {
+            throw new Error(
+                `Missing dead letter queue name in subscriber ${subscriber.queueName} config`
+            );
+        }
+    }
+}
+
 export function assignConfigDefaults(cfg: YamlConfig): YamlConfig {
     return {
         publishers: cfg.publishers
@@ -87,6 +97,7 @@ export function buildYamlConfig(fileContents: string): YamlConfig {
     if (isValidConfig(parsedYaml)) {
         const config = assignConfigDefaults(parsedYaml);
         ensureNoMissingIdentities(config);
+        ensureNoMissingDLQNames(config);
         return config;
     } else {
         validateConfig.errors?.forEach((err) => {

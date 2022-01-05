@@ -3,6 +3,7 @@ import { Channel } from 'amqplib-as-promised/lib';
 import { FastifyLoggerInstance } from 'fastify';
 import { SubscriberConfig } from '../config/yaml-config.types';
 import { BackoffStrategy } from './backoff-strategy';
+import { DeadLetterPolicy } from './dead-letter-policy';
 import { PushSender } from './push-sender';
 
 interface PlannedRetry {
@@ -19,14 +20,15 @@ export class RetryManager {
         protected readonly channel: Channel,
         protected readonly pushSender: PushSender,
         protected readonly logger: FastifyLoggerInstance,
-        protected calculateBackoff: BackoffStrategy
+        protected readonly calculateBackoff: BackoffStrategy,
+        protected readonly deadLetterPolicy: DeadLetterPolicy
     ) {}
     public planDeliveryRetry(msg: Message, attempt = 1) {
         if (attempt > this.config.retries) {
             this.logger.warn(
-                `Maximum number of delivery retries exceeded for message ID: ${msg.properties.messageId}, nacking message`
+                `Maximum number of delivery retries exceeded for message ID: ${msg.properties.messageId}, ${this.deadLetterPolicy.describeBehavior} message`
             );
-            this.channel.nack(msg);
+            this.deadLetterPolicy.handleDeadMessage(msg);
         } else {
             const plannedRetry: PlannedRetry = {
                 msg,

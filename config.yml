@@ -37,6 +37,7 @@ subscribers:
     backoffStrategy: linear
     retries: 4
     retryDelay: 1000
+    deadLetterPolicy: requeue
 
 identities:
   - name: Bob

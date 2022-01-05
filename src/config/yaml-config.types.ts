@@ -26,7 +26,7 @@ export interface ConsumerConfig extends AccessProtectedResource {
     queueName: string;
 }
 
-export interface SubscriberConfig {
+interface SubscriberBaseConfig {
     queueName: string;
     target: string;
     prefetch: number;
@@ -40,8 +40,15 @@ export interface SubscriberConfig {
         | 'constant-random';
     retries: number;
     retryDelay: number;
-    deadLetterQueueName?: string;
+    deadLetterPolicy: 'requeue' | 'discard';
 }
+
+interface DQLSubscriberConfig extends Omit<SubscriberBaseConfig, 'deadLetterPolicy'> {
+    deadLetterPolicy: 'dlq';
+    deadLetterQueueName: string;
+}
+
+export type SubscriberConfig = SubscriberBaseConfig | DQLSubscriberConfig;
 
 export interface IdentityConfig {
     name: string;
@@ -58,10 +65,11 @@ export const ConsumerConfigDefaults: Partial<ConsumerConfig> = {
     identities: []
 };
 
-export const SubscriberConfigDefaults = {
+export const SubscriberConfigDefaults: Partial<SubscriberConfig> = {
     prefetch: 10,
     timeout: 2000,
     backoffStrategy: 'linear',
     retries: 5,
-    retryDelay: 1000
+    retryDelay: 1000,
+    deadLetterPolicy: 'requeue'
 };
