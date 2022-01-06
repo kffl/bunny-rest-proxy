@@ -74,4 +74,4 @@ And voila, you should have received your JSON message:
 
 ## Wrapping up
 
-While this guide was supposed to give you a basic understanding of what Bunny REST Proxy can be used for, we are barely scratching the surface in terms of the functionality it has to offer. We haven't even touched on [subscribers](/subscribers/subscriber-config), which allow for pushing messages from a queue to specified HTTP targets with retry backoff strategies and dead letter policies. Publishers also offer additional functionalities such as server-side JSON schema validation or ACL-based authorization.
+While this guide was supposed to give you a basic understanding of what Bunny REST Proxy can be used for, we are barely scratching the surface in terms of the functionality it has to offer. We haven't even touched on [subscribers](subscribers/subscriber-config.md), which allow for pushing messages from a queue to specified HTTP targets with retry backoff strategies and dead letter policies. Publishers also offer additional functionalities such as server-side JSON schema validation or ACL-based authorization.

@@ -1,4 +1,5 @@
 site_name: Bunny REST Proxy
+site_url: https://kffl.github.io/bunny-rest-proxy/
 theme:
   name: material
   palette:

@@ -28,8 +28,8 @@ The following keys can be specified in the publisher configuration block:
 - `target` (**required**): HTTP target to which the messages will be pushed via HTTP POST requests.
 - `prefetch`: The maximum number of unacknowledged messages being processed by the subscriber. Defaults to 10.
 - `timeout`: HTTP POST (PUSH) request timeout in milliseconds. Defaults to 2000.
-- `backoffStrategy`: The name of the [backoff strategy](/subscribers/retry-backoff-strategies/) to be used when retrying a failed HTTP POST message delivery attempt. Possible values are: `constant`, `constant-random`, `linear`, `linear-random`, `exponential` and `exponential-random`. Defaults to `linear`.
+- `backoffStrategy`: The name of the [backoff strategy](retry-backoff-strategies.md) to be used when retrying a failed HTTP POST message delivery attempt. Possible values are: `constant`, `constant-random`, `linear`, `linear-random`, `exponential` and `exponential-random`. Defaults to `linear`.
 - `retries`: The maximum number of failed message delivery retry attempts. Defaults to 5.
 - `retryDelay`: Base retry timeout in milliseconds between delivery retry attempts. Its value is used to calculate actual delays before n-th delivery attempt depending on the specified backoff strategy. Defaults to 1000.
-- `deadLetterPolicy`: The name of [dead letter policy](/subscribers/dead-letter-policies/) to be applied when a given message exceeds the maximum number of failed message delivery retries. Possible values are `requeue`, `discard` and `dql`. Defaults to `requeue`.
+- `deadLetterPolicy`: The name of [dead letter policy](dead-letter-policies.md) to be applied when a given message exceeds the maximum number of failed message delivery retries. Possible values are `requeue`, `discard` and `dql`. Defaults to `requeue`.
 - `deadLetterQueueName`: The name of dead letter queue to which a message will be sent after exceeding the maximum number of failed message delivery retries provided that the `deadLetterPolicy` is set to `dlq`.
