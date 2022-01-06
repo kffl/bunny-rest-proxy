@@ -4,7 +4,7 @@ In this guide you will spin up a Bunny REST Proxy instance with one JSON publish
 
 ## Step 1: Create a configuration file
 
-Entire configuration of Bunny REST Proxy is declared in a `config.yml` file. Let's create one defining a publisher and a consumer:
+Entire configuration of Bunny REST Proxy is declared in a single file named `config.yml`. Let's create one defining a publisher and a consumer:
 
 ```bash
 cat <<EOT >> config.yml
@@ -74,4 +74,4 @@ And voila, you should have received your JSON message:
 
 ## Wrapping up
 
-While this guide was supposed to give you a basic understanding of what Bunny REST Proxy can be used for, we are barely scratching the surface in terms of the functionality it has to offer. We haven't even touched on [subscribers](/subscribers/subscriber-config), which allow for pushing messages from a queue to specified HTTP targets with retry backoff strategies and dead letter policies. Publishers also offer additional functionalities such as server-side JSON schema validation or ACL-like access control.
+While this guide was supposed to give you a basic understanding of what Bunny REST Proxy can be used for, we are barely scratching the surface in terms of the functionality it has to offer. We haven't even touched on [subscribers](/subscribers/subscriber-config), which allow for pushing messages from a queue to specified HTTP targets with retry backoff strategies and dead letter policies. Publishers also offer additional functionalities such as server-side JSON schema validation or ACL-based authorization.

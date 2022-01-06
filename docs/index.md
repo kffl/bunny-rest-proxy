@@ -10,13 +10,13 @@ Bunny REST Proxy design is based on the following four principles:
 
 ### Simplicity and ease of use
 
-Bunny REST Proxy was built with simplicity and ease of use in mind. All of the important configuration is stored in a single YAML file. The getting started guide takes about 5 minutes to complete.
+Bunny REST Proxy was built with simplicity and ease of use in mind. All of the important configuration is stored in a single YAML file. You can try it yourself by following the [quickstart guide](/getting-started/) which takes about 5 minutes to complete.
 
 ### Message delivery guarantees
 
 At-least-once delivery semantics are supported out of the box thanks to the usage of channels with publishers confirms. By default, Bunny REST Proxy won't sent back a successful response to an HTTP publish request unless the message was durably persisted in the broker. Messages unsuccessfully pushed to subscribers over HTTP won't be lost either thanks to a configurable retry mechanism (with various [backoff strategies](/subscribers/retry-backoff-strategies/)) and [dead letter policies](/subscribers/dead-letter-policies/).
 
-### Easy integration into existing systems
+### Flexible integration into existing systems
 
 Bunny REST Proxy doesn't force you to rewrite your existing distributed system that uses RabbitMQ. Instead, it allows for incremental adoption by only using a subset of its features, while leaving the rest of your AMQP-based architecture untouched.
 

@@ -1,6 +1,6 @@
 # Consumer configuration
 
-Consumer are used for pull-based consuming of messages one-by-one from queues using HTTP GET requests. Unlike subscribers, which support reliable message delivery with retries and dead letter policy, consumers auto-acknowledge each retrieved message (via AMQP RPC-based GET operation) so that it won't be re-delivered. For that reason, getting messages from a queue via a consumer HTTP GET requests shall not be used when at-least-once delivery semantics are desired.
+Consumer are used for pull-based retrieval of messages one-by-one from queues using HTTP GET requests. Unlike subscribers, which support reliable message delivery with retries and dead letter policy, consumers auto-acknowledge each retrieved message (via AMQP RPC-based GET operation) so that it won't be re-delivered. For that reason, getting messages from a queue via a consumer HTTP GET requests shall not be used when at-least-once delivery semantics are desired.
 
 Consumers are declared in the `consumers` block of the `config.yml` file:
 
