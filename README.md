@@ -1,5 +1,5 @@
 <div align="center">
-  <img alt="Bunny REST Proxy logo" src="https://github.com/kffl/bunny-rest-proxy/raw/HEAD/assets/bunny-rest-proxy-logo-dark.svg" width="400" height="auto"/>
+  <img alt="Bunny REST Proxy logo" src="https://github.com/kffl/bunny-rest-proxy/raw/HEAD/docs/assets/bunny-rest-proxy-logo-dark.svg" width="400" height="auto"/>
 </div>
 
 <div align="center">
@@ -8,16 +8,20 @@
 
 </div>
 
-# Bunny REST Proxy
+# Bunny REST Proxy :rabbit: :incoming_envelope:
 
-HTTP message broker built on top of RabbitMQ inspired by Confluent REST Proxy for Kafka.
+[Documentation](https://kffl.github.io/bunny-rest-proxy/)
+
+Bunny REST Proxy is a HTTP message broker built on top of RabbitMQ. It allows services to easily publish messages into RabbitMQ queues over HTTP as well as to consume messages utilizing both pull (HTTP GET) and push (HTTP POST to a subscriber) delivery modes.
 
 ## Motivation
 
 While RabbitMQ is commonly used as a means of asynchronous communication between microservices, sometimes you need to publish messages or consume messages using a much simpler REST API without compromising on message delivery guarantees.
 
-## Features (Planned)
+## Features
 
 - Publishing messages into RabbitMQ queues over REST API implementing **reliable message delivery** using channels with publisher confirms
-- Pushing messages to defined subscribers over HTTP ensuring **at-least-once** delivery semantics
-- Consuming messages from the queue over HTTP
+- Support for binary and JSON messages (with server-side schema validation)
+- Pushing messages to defined subscribers over HTTP ensuring **at-least-once** delivery semantics with configurable backoff strategies and dead letter policies
+- Consuming messages from the queue HTTP GET requests
+- Straight-forward configuration based on a single YAML file

@@ -1,0 +1,56 @@
+site_name: Bunny REST Proxy
+theme:
+  name: material
+  palette:
+    - scheme: default
+      toggle:
+        icon: material/lightbulb-outline
+        name: Switch to dark mode
+    - scheme: slate
+      toggle:
+        icon: material/lightbulb
+        name: Switch to light mode 
+  font:
+    text: Roboto
+  favicon: assets/favicon.png
+  logo: assets/bunny-rest-proxy-logo-menu.svg
+  features:
+    - navigation.sections
+
+
+repo_name: kffl/bunny-rest-proxy
+repo_url: https://github.com/kffl/bunny-rest-proxy
+
+copyright: Copyright &copy; 2021 - 2022 Paweł Kuffel
+
+extra_css:
+  - stylesheets/extra.css
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/kffl/bunny-rest-proxy
+    - icon: fontawesome/brands/docker
+      link: https://hub.docker.com/r/kffl/bunny-rest-proxy
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - markdown.extensions.attr_list
+
+pages:
+  - Home: index.md
+  - Getting started: getting-started.md
+  - Deployment: deployment.md
+  - Publishers:
+    - Publisher configuration: publishers/publisher-config.md
+    - Publishing messages: publishers/publishing-messages.md
+  - Consumers:
+    - Consumer configuration: consumers/consumer-config.md
+    - Consuming messages: consumers/consuming-messages.md
+  - Subscribers:
+    - Subscriber configuration: subscribers/subscriber-config.md
+    - Message PUSH format: subscribers/message-format.md
+    - Backoff strategies: subscribers/retry-backoff-strategies.md
+    - Dead letter policies: subscribers/dead-letter-policies.md
