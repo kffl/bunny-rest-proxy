@@ -145,7 +145,7 @@ function buildTestTarget() {
 describe('bunny-rest-proxy instance', () => {
     beforeAll(() => {
         app = buildApp(envConfig, yamlConfig);
-        return app.listen(3000);
+        return app.listen(3672);
     });
 
     beforeEach(() => {
