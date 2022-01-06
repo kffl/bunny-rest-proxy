@@ -5,6 +5,6 @@ export const ConsumerErrors = {
     ERR_QUEUE_DOWN_GET: createError(
         'ERR_QUEUE_DOWN_GET',
         'Could not retrieve message from queue',
-        500
+        502
     )
 };
