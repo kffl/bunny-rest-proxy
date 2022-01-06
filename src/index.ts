@@ -10,7 +10,7 @@ async function start() {
     const yamlConfig = buildYamlConfig(configFile);
     const app = buildApp(envConfig, yamlConfig);
     try {
-        await app.listen(3672);
+        await app.listen(3672, '0.0.0.0');
     } catch (err) {
         app.log.error('An error occurred when starting BRP server: ' + err);
         process.exit(1);
