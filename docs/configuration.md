@@ -9,7 +9,7 @@ The `config.yml` may contain four block types declaring the following entities:
 - [Publishers](publishers/publisher-config.md), which are used used in order to send messages to RabbitMQ queues over HTTP.
 - [Consumers](consumers/consumer-config.md) used for pull-based retrieval of messages one-by-one from queues using HTTP GET requests.
 - [Subscribers](subscribers/subscriber-config.md) that allow for pushing messages from a given queue to a specified target via HTTP POST requests.
-- [Identities](identities/identity-config.md) used for ACL-based authorization of publisher and consumer HTTP endpoints.
+- [Identities](identities/configuring-identities.md) used for ACL-based authorization of publisher and consumer HTTP endpoints.
 
 Below is a simple example of a `config.yml` file declaring a publisher and a  consumer working on a single RabbitMQ queue:
 
