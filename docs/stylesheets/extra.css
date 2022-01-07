@@ -1,5 +1,13 @@
 :root {
-  --md-primary-fg-color:        #303f9f;
+  --md-primary-fg-color: #303f9f;
+}
+
+[data-md-color-scheme="slate"] .md-typeset a {
+    color: #a0acff;
+}
+
+[data-md-color-scheme="slate"] .md-nav__item .md-nav__link--active {
+    color: #a0acff;
 }
 
 .md-header__title {
