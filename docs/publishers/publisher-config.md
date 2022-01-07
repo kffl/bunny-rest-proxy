@@ -1,6 +1,6 @@
 # Publisher configuration
 
-Publishers are are used in order to send messages to RabbitMQ queues over HTTP. They are defined in the `publishers` block of the `config.yml` file. Below is an example of `publishers` block defining two publishers:
+Publishers are used in order to send messages to RabbitMQ queues over HTTP. They are defined in the `publishers` block of the `config.yml` file. Below is an example of `publishers` block defining two publishers:
 
 ```yaml
 publishers:

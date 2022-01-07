@@ -43,6 +43,7 @@ markdown_extensions:
 pages:
   - Home: index.md
   - Getting started: getting-started.md
+  - Configuration: configuration.md
   - Deployment: deployment.md
   - Publishers:
     - Publisher configuration: publishers/publisher-config.md
@@ -55,3 +56,5 @@ pages:
     - Message PUSH format: subscribers/message-format.md
     - Backoff strategies: subscribers/retry-backoff-strategies.md
     - Dead letter policies: subscribers/dead-letter-policies.md
+  - Identities:
+    - Configuring identities: identities/configuring-identities.md
