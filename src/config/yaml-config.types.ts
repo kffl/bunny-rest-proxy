@@ -43,12 +43,12 @@ interface SubscriberBaseConfig {
     deadLetterPolicy: 'requeue' | 'discard';
 }
 
-interface DQLSubscriberConfig extends Omit<SubscriberBaseConfig, 'deadLetterPolicy'> {
+interface DLQSubscriberConfig extends Omit<SubscriberBaseConfig, 'deadLetterPolicy'> {
     deadLetterPolicy: 'dlq';
     deadLetterQueueName: string;
 }
 
-export type SubscriberConfig = SubscriberBaseConfig | DQLSubscriberConfig;
+export type SubscriberConfig = SubscriberBaseConfig | DLQSubscriberConfig;
 
 export interface IdentityConfig {
     name: string;
