@@ -5,9 +5,9 @@ export type BackoffStrategy = (baseDelay: number, retryNumber: number) => number
 const randomIntegerFromInterval = (min: number, max: number) =>
     Math.floor(Math.random() * (max - min + 1) + min);
 
-export const constant: BackoffStrategy = (baseDelay: number, retryNumber: number) => baseDelay;
+export const constant: BackoffStrategy = (baseDelay: number) => baseDelay;
 
-export const constantRandom: BackoffStrategy = (baseDelay: number, retryNumber: number) =>
+export const constantRandom: BackoffStrategy = (baseDelay: number) =>
     randomIntegerFromInterval(0.5 * baseDelay, 1.5 * baseDelay);
 
 export const linear: BackoffStrategy = (baseDelay: number, retryNumber: number) =>
