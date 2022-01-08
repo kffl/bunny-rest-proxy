@@ -4,13 +4,13 @@
 
 <div align="center">
 
-[![CI Workflow](https://github.com/kffl/bunny-rest-proxy/actions/workflows/ci.yml/badge.svg)](https://github.com/kffl/bunny-rest-proxy/actions/workflows/ci.yml)
+[![CI Workflow](https://github.com/kffl/bunny-rest-proxy/actions/workflows/ci.yml/badge.svg)](https://github.com/kffl/bunny-rest-proxy/actions/workflows/ci.yml) [![Docker Pulls](https://img.shields.io/docker/pulls/kffl/bunny-rest-proxy)](https://hub.docker.com/r/kffl/bunny-rest-proxy) [![Docker Image Version](https://img.shields.io/docker/v/kffl/bunny-rest-proxy)](https://hub.docker.com/r/kffl/bunny-rest-proxy) [![Known Vulnerabilities](https://snyk.io/test/github/kffl/bunny-rest-proxy/badge.svg)](https://snyk.io/test/github/kffl/bunny-rest-proxy)
 
 </div>
 
 # Bunny REST Proxy :rabbit: :incoming_envelope:
 
-[Documentation](https://kffl.github.io/bunny-rest-proxy/)
+[Documentation](https://kffl.github.io/bunny-rest-proxy/), [Quickstart Guide](https://kffl.github.io/bunny-rest-proxy/getting-started/), [Docker Hub](https://hub.docker.com/r/kffl/bunny-rest-proxy)
 
 Bunny REST Proxy is a HTTP message broker built on top of RabbitMQ. It allows services to easily publish messages into RabbitMQ queues over HTTP as well as to consume messages utilizing both pull (HTTP GET) and push (HTTP POST to a subscriber) delivery modes.
 
