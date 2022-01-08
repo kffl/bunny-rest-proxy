@@ -69,11 +69,11 @@ export class Subscriber {
         this.retryManager.cancelPlannedDeliveryRetries(isConnectionFailure);
         if (!isConnectionFailure) await this.channel.cancel(this.consumerTag);
     }
-    protected handleMessage(msg: Message | null) {
+    public handleMessage(msg: Message | null) {
         if (msg === null) {
             return;
         }
-        this.logger.trace(`Received ${msg.fields.redelivered}`);
+        this.logger.trace(`Received message with ID ${msg.properties.messageId}`);
         this.inFlightPushRequests++;
         this.pushSender
             .pushMessage(msg)
