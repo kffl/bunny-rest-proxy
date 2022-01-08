@@ -16,7 +16,10 @@ function isValidConfig(parsedYaml: unknown): parsedYaml is YamlConfig {
     return validateConfig(parsedYaml);
 }
 
-function parseIdentityTokensFromEnv(identityConfig: IdentityConfig, env: object): IdentityConfig {
+export function parseIdentityTokenFromEnv(
+    identityConfig: IdentityConfig,
+    env: object
+): IdentityConfig {
     if (!identityConfig.token) {
         const envName = 'BRP_TOKEN_' + identityConfig.name;
         if (!(envName in env)) {
@@ -37,7 +40,7 @@ function parseIdentityTokensFromEnv(identityConfig: IdentityConfig, env: object)
     return identityConfig;
 }
 
-function ensureNoMissingIdentities(cfg: YamlConfig) {
+export function ensureNoMissingIdentities(cfg: YamlConfig) {
     for (const consumer of cfg.consumers) {
         for (const identity of consumer.identities) {
             if (!cfg.identities.some((i) => i.name === identity)) {
@@ -58,7 +61,7 @@ function ensureNoMissingIdentities(cfg: YamlConfig) {
     }
 }
 
-function ensureNoMissingDLQNames(cfg: YamlConfig) {
+export function ensureNoMissingDLQNames(cfg: YamlConfig) {
     for (const subscriber of cfg.subscribers) {
         if (subscriber.deadLetterPolicy === 'dlq' && !subscriber.deadLetterQueueName) {
             throw new Error(
@@ -80,7 +83,7 @@ export function assignConfigDefaults(cfg: YamlConfig): YamlConfig {
             ? cfg.subscribers.map((c) => Object.assign({}, SubscriberConfigDefaults, c))
             : [],
         identities: cfg.identities
-            ? cfg.identities.map((c) => parseIdentityTokensFromEnv(c, process.env))
+            ? cfg.identities.map((c) => parseIdentityTokenFromEnv(c, process.env))
             : []
     };
 }

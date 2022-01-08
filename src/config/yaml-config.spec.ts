@@ -1,4 +1,15 @@
-import { buildYamlConfig } from './yaml-config';
+import {
+    buildYamlConfig,
+    ensureNoMissingDLQNames,
+    ensureNoMissingIdentities,
+    parseIdentityTokenFromEnv
+} from './yaml-config';
+import {
+    IdentityConfig,
+    PublisherContentTypes,
+    SubscriberConfigDefaults,
+    YamlConfig
+} from './yaml-config.types';
 
 const singlePublisherCfgBasic = `
 ---
@@ -38,6 +49,9 @@ const complexCfg = `
       prefetch: 1
       retries: 4
       retryDelay: 1000
+  identities:
+    - name: Bob
+      token: BobsToken
 `;
 
 const incompleteCfg = `
@@ -91,5 +105,87 @@ describe('YAML config parser', () => {
             buildYamlConfig(invalidYAML);
         };
         expect(t).toThrowError();
+    });
+});
+
+describe('parseIdentityTokenFromEnv function', () => {
+    it('should throw an error if a missing identity token is not found in env', () => {
+        //@ts-ignore
+        const identityConfig: IdentityConfig = { name: 'Alice' };
+        const t = () => {
+            parseIdentityTokenFromEnv(identityConfig, { SOME_OTHER_VALUE: 'YUP' });
+        };
+        expect(t).toThrowError('identity token');
+    });
+
+    it('should read a missing identity token from env', () => {
+        //@ts-ignore
+        const identityConfig: IdentityConfig = { name: 'Alice' };
+        const r = parseIdentityTokenFromEnv(identityConfig, { BRP_TOKEN_Alice: 'SomeToken' });
+        expect(r.token).toEqual('SomeToken');
+    });
+
+    it('should do nothing if the token was already provided', () => {
+        const identityConfig: IdentityConfig = { name: 'Alice', token: 'TokenFromYAML' };
+        const r = parseIdentityTokenFromEnv(identityConfig, { BRP_TOKEN_Alice: 'SomeToken' });
+        expect(r.token).toEqual('TokenFromYAML');
+    });
+});
+
+describe('ensureNoMissingIdentities function', () => {
+    it('should throw an error if a consumer references a non-existent identity', () => {
+        const cfg: YamlConfig = {
+            publishers: [],
+            consumers: [{ queueName: 'json-queue', identities: [`non-existent`] }],
+            subscribers: [],
+            identities: []
+        };
+        const t = () => {
+            ensureNoMissingIdentities(cfg);
+        };
+        expect(t).toThrowError('Unknown identity non-existent');
+    });
+
+    it('should throw an error if a publisher references a non-existent identity', () => {
+        const cfg: YamlConfig = {
+            publishers: [
+                {
+                    queueName: 'json-queue',
+                    confirm: true,
+                    contentType: PublisherContentTypes.JSON,
+                    identities: ['nope']
+                }
+            ],
+            consumers: [{ queueName: 'json-queue', identities: ['Bob'] }],
+            subscribers: [],
+            identities: [{ name: 'Bob', token: 'BobsToken' }]
+        };
+        const t = () => {
+            ensureNoMissingIdentities(cfg);
+        };
+        expect(t).toThrowError('Unknown identity nope');
+    });
+});
+
+describe('ensureNoMissingDLQNames function', () => {
+    it("should throw an error if a subscriber with DLQ policy doesn't specify a DLQ name", () => {
+        const cfg: YamlConfig = {
+            publishers: [],
+            consumers: [],
+            subscribers: [
+                //@ts-ignore
+                {
+                    queueName: 'json-queue',
+                    target: 'http://test-target.host/',
+                    ...SubscriberConfigDefaults,
+                    deadLetterPolicy: 'dlq'
+                }
+            ]
+        };
+
+        const t = () => {
+            ensureNoMissingDLQNames(cfg);
+        };
+        expect(t).toThrowError('Missing dead letter queue name in subscriber json-queue');
     });
 });
