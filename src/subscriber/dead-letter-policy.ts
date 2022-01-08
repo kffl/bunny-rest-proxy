@@ -8,7 +8,7 @@ export interface DeadLetterPolicy {
     describeBehavior: string;
 }
 
-class DiscardDLP implements DeadLetterPolicy {
+export class DiscardDLP implements DeadLetterPolicy {
     constructor(protected readonly channel: Channel) {}
     public get describeBehavior() {
         return 'discarding (acking) message';
@@ -18,7 +18,7 @@ class DiscardDLP implements DeadLetterPolicy {
     }
 }
 
-class RequeueDLP implements DeadLetterPolicy {
+export class RequeueDLP implements DeadLetterPolicy {
     constructor(protected readonly channel: Channel) {}
     public get describeBehavior() {
         return 'requeuing (nacking) message';
@@ -28,7 +28,7 @@ class RequeueDLP implements DeadLetterPolicy {
     }
 }
 
-class DeadLetterQueueDLP implements DeadLetterPolicy {
+export class DeadLetterQueueDLP implements DeadLetterPolicy {
     constructor(
         protected readonly channel: Channel,
         protected readonly confirmChannel: ConfirmChannel,
