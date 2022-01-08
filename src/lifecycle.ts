@@ -11,12 +11,14 @@ export function totalMessagesInFlight(publishers: Array<Publisher>): number {
 }
 
 function subscriberDeliveriesInFlight(subscribers: Array<Subscriber>): number {
-    return subscribers.reduce((prev, current) => {
-        return prev + current.inFlightPushRequests + current.inFlightPushRetries;
-    }, 0);
+    let inFlightPushRequests = 0;
+    for (const subscriber of subscribers) {
+        inFlightPushRequests += subscriber.inFlightPushRequests;
+    }
+    return inFlightPushRequests;
 }
 
-export async function gracefullyHandleSubscriberShutdown(app: AppInstance) {
+export async function gracefullyHandleSubscriberShutdown(app: AppInstance, retryDelay = 1000) {
     app.pendingShutdown = true;
 
     if (!app.errorShutdown) {
@@ -39,7 +41,7 @@ export async function gracefullyHandleSubscriberShutdown(app: AppInstance) {
                 app.log.warn(
                     `Some subscribers are pushing messages that are still in-flight (${deliveriesInFlight}). Waiting 1s for retry #${retries}`
                 );
-                await sleep(1000);
+                await sleep(retryDelay);
             }
         }
 
