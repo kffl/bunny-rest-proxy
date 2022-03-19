@@ -12,6 +12,11 @@
 
 [Documentation](https://kffl.github.io/bunny-rest-proxy/), [Quickstart Guide](https://kffl.github.io/bunny-rest-proxy/getting-started/), [Docker Hub](https://hub.docker.com/r/kffl/bunny-rest-proxy)
 
+
+<div align="center">
+  <img alt="Bunny REST Proxy logo" src="https://github.com/kffl/bunny-rest-proxy/raw/HEAD/docs/assets/bunny-rest-proxy-diagram.svg" width="820" height="auto"/>
+</div>
+
 Bunny REST Proxy is a HTTP message broker built on top of RabbitMQ. It allows services to easily publish messages into RabbitMQ queues over HTTP as well as to consume messages utilizing both pull (HTTP GET) and push (HTTP POST to a subscriber) delivery modes.
 
 ## Motivation

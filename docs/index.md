@@ -4,6 +4,10 @@
 
 Bunny REST Proxy is a HTTP message broker built on top of RabbitMQ. It allows services to easily publish messages into RabbitMQ queues over HTTP as well as to consume messages utilizing both pull (HTTP GET) and push (HTTP POST to a subscriber) delivery modes.
 
+## Overview
+
+![Bunny REST Proxy diagram](./assets/bunny-rest-proxy-diagram.svg){: .center}
+
 ## Design principles
 
 Bunny REST Proxy design is based on the following four principles:
