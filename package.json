@@ -21,7 +21,7 @@
         "fastify-amqp-async": "^0.2.0",
         "fastify-error": "^1.0.0",
         "fastify-graceful-shutdown": "^3.1.0",
-        "js-yaml": "^3.14.1",
+        "js-yaml": "^4.1.0",
         "node-fetch": "^2.6.6",
         "pino-pretty": "^7.3.0"
     },
