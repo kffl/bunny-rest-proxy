@@ -23,7 +23,7 @@
         "fastify-graceful-shutdown": "^3.1.0",
         "js-yaml": "^4.1.0",
         "node-fetch": "^2.6.6",
-        "pino-pretty": "^7.3.0"
+        "pino-pretty": "^7.5.4"
     },
     "devDependencies": {
         "@types/amqplib": "^0.8.2",
