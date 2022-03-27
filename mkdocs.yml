@@ -40,7 +40,7 @@ markdown_extensions:
   - pymdownx.superfences
   - markdown.extensions.attr_list
 
-pages:
+nav:
   - Home: index.md
   - Getting started: getting-started.md
   - Configuration: configuration.md
