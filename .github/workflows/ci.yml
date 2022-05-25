@@ -8,7 +8,7 @@ jobs:
 
     strategy:
       matrix:
-        node: [16, 18]
+        node: [16]
 
     name: Test on node version ${{ matrix.node }}
 
