@@ -145,13 +145,13 @@ function buildTestTarget() {
 describe('bunny-rest-proxy instance', () => {
     beforeAll(() => {
         app = buildApp(envConfig, yamlConfig);
-        return app.listen(3672);
+        return app.listen(3672, '0.0.0.0');
     });
 
     beforeEach(() => {
         targetReqHandler.mockClear();
         testTarget = buildTestTarget();
-        return testTarget.listen(5555);
+        return testTarget.listen(5555, '0.0.0.0');
     });
 
     afterEach(() => {
