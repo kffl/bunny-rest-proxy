@@ -1,14 +1,17 @@
 import { Message } from 'amqplib';
 import fetch from 'node-fetch';
+import { SubscriberMetricsCollector } from '../metrics/metrics-collector.interfaces';
 
 export class PushSender {
     constructor(
         protected readonly queueName: string,
         protected readonly target: string,
-        protected readonly timeout: number
+        protected readonly timeout: number,
+        protected readonly metricsCollector: SubscriberMetricsCollector
     ) {}
-    public pushMessage(msg: Message) {
-        return fetch(this.target, {
+    public async pushMessage(msg: Message) {
+        const completed = this.metricsCollector.startSubscriberTimer(this.queueName, this.target);
+        const r = await fetch(this.target, {
             timeout: this.timeout,
             method: 'POST',
             headers: {
@@ -25,5 +28,7 @@ export class PushSender {
             },
             body: msg.content
         });
+        completed({ status: r.status });
+        return r;
     }
 }

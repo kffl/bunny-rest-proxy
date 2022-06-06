@@ -7,12 +7,14 @@ import { sleep } from '../lifecycle';
 import { PushSender } from './push-sender';
 import { RetryManager } from './retry-manager';
 import { Subscriber } from './subscriber';
+import { SubscriberMetricsCollector } from '../metrics/metrics-collector.interfaces';
 
 describe('Subscriber class', () => {
     const channel = mock<Channel>();
     const logger = mock<FastifyLoggerInstance>();
     const sender = mock<PushSender>();
     const retryManager = mock<RetryManager>();
+    const metricsCollector = mock<SubscriberMetricsCollector>();
     const cfg = {
         queueName: 'testqueue',
         target: 'http://target.host/path',
@@ -21,7 +23,7 @@ describe('Subscriber class', () => {
     } as SubscriberConfig;
 
     beforeEach(() => {
-        [channel, logger, sender, retryManager].forEach((el) => {
+        [channel, logger, sender, retryManager, metricsCollector].forEach((el) => {
             mockClear(el);
         });
     });
@@ -32,27 +34,27 @@ describe('Subscriber class', () => {
             target: 'wrongtarget%$^?'
         };
         const t = () => {
-            new Subscriber(errorCfg, channel, logger, sender, retryManager);
+            new Subscriber(errorCfg, channel, logger, sender, retryManager, metricsCollector);
         };
         expect(t).toThrowError('target URL');
     });
 
     it('should be instantiated without an error when provided with valid config', () => {
         const t = () => {
-            new Subscriber(cfg, channel, logger, sender, retryManager);
+            new Subscriber(cfg, channel, logger, sender, retryManager, metricsCollector);
         };
         expect(t).not.toThrowError();
     });
 
     it('should be instantiated without an error when provided with valid config', () => {
         const t = () => {
-            new Subscriber(cfg, channel, logger, sender, retryManager);
+            new Subscriber(cfg, channel, logger, sender, retryManager, metricsCollector);
         };
         expect(t).not.toThrowError();
     });
 
     it('should set prefetch value from config before starting an AMQP consumer', async () => {
-        const s = new Subscriber(cfg, channel, logger, sender, retryManager);
+        const s = new Subscriber(cfg, channel, logger, sender, retryManager, metricsCollector);
         await s.start();
 
         expect(logger.info).toHaveBeenCalledTimes(1);
@@ -63,7 +65,7 @@ describe('Subscriber class', () => {
     });
 
     it('should cancel the consumer and planned delivery retries on stop', async () => {
-        const s = new Subscriber(cfg, channel, logger, sender, retryManager);
+        const s = new Subscriber(cfg, channel, logger, sender, retryManager, metricsCollector);
         await s.start();
         await s.stop(false);
 
@@ -72,7 +74,7 @@ describe('Subscriber class', () => {
     });
 
     it('should cancel planned delivery retries on stop in failure mode without writing to AMQP channel', async () => {
-        const s = new Subscriber(cfg, channel, logger, sender, retryManager);
+        const s = new Subscriber(cfg, channel, logger, sender, retryManager, metricsCollector);
         await s.start();
         await s.stop(true);
 
@@ -81,7 +83,7 @@ describe('Subscriber class', () => {
     });
 
     it('should deliver a consumed message to HTTP target and ack the message', async () => {
-        const s = new Subscriber(cfg, channel, logger, sender, retryManager);
+        const s = new Subscriber(cfg, channel, logger, sender, retryManager, metricsCollector);
         await s.start();
         const msg = mock<Message>();
         //@ts-ignore
@@ -99,7 +101,7 @@ describe('Subscriber class', () => {
     });
 
     it('should do nothing when receiving a null message', async () => {
-        const s = new Subscriber(cfg, channel, logger, sender, retryManager);
+        const s = new Subscriber(cfg, channel, logger, sender, retryManager, metricsCollector);
         await s.start();
         const msg = null;
 
@@ -113,7 +115,7 @@ describe('Subscriber class', () => {
     });
 
     it('should hand over a delivery that failed due to a fetch error to retry manager', async () => {
-        const s = new Subscriber(cfg, channel, logger, sender, retryManager);
+        const s = new Subscriber(cfg, channel, logger, sender, retryManager, metricsCollector);
         await s.start();
         const msg = mock<Message>();
         //@ts-ignore
@@ -130,7 +132,7 @@ describe('Subscriber class', () => {
     });
 
     it('should hand over a delivery that failed due to a non 2XX response code to retry manager', async () => {
-        const s = new Subscriber(cfg, channel, logger, sender, retryManager);
+        const s = new Subscriber(cfg, channel, logger, sender, retryManager, metricsCollector);
         await s.start();
         const msg = mock<Message>();
         //@ts-ignore
@@ -144,5 +146,6 @@ describe('Subscriber class', () => {
         expect(retryManager.planDeliveryRetry).toHaveBeenCalledTimes(1);
         expect(retryManager.planDeliveryRetry).toHaveBeenCalledWith(msg, 1);
         expect(sender.pushMessage).toHaveBeenCalledTimes(1);
+        expect(metricsCollector.recordFailedDelivery).toHaveBeenCalledTimes(1);
     });
 });

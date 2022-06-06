@@ -16,6 +16,17 @@ Bunny REST Proxy is a stateless application that can be scaled horizontally i.e.
 
 ## Metrics
 
+Bunny REST Proxy provides a built-in Prometheus exporter which exposes metrics on port 9672 (`/metrics` endpoint).
+
+The following metrics are collected:
+
+- `publisher_latency` _histogram_ - latency of HTTP POST publisher requests labeled with: `queue` - the name of a queue and `status` - response HTTP status code
+- `consumer_latency` _histogram_ - latency of HTTP GET consumer requests labeled with: `queue` - the name of a queue and `status` - response HTTP status code
+- `subscriber_latency` _histogram_ - latency of HTTP POST (PUSH) subscriber requests sent to the subscriber's target labeled wit: `queue` - the name of a queue, `target` - URL of the subscriber target and `status` - response HTTP status code
+- `subscriber_failed_messages` _counter_ - number of messages that failed the initial delivery attempt (and might have been scheduled for retry depending on subscriber config) labeled with: `queue` - the name of a queue and `target` - URL of the subscriber target
+- `subscriber_dead_messages` _counter_ - number of messages that exceeded the maximum number of delivery retries (and were dealt with according to the specified dead letter policy) labeled with: `queue` - the name of a queue and `target` - URL of the subscriber target
+- a suite of standard Node.js metrics collected by the `prom-client` library
+
 ## Performance
 
 Bunny REST Proxy performance depends heavily on the performance offered by the underlying RabbitMQ queues. In some preliminary load tests conducted using [gocannon](https://github.com/kffl/gocannon), when running a single instance of Bunny REST Proxy against a RabbitMQ broker located on the same host, the following results were obtained on a Skylake-based machine with a relatively high CPU clock:
