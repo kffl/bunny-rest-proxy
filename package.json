@@ -27,7 +27,7 @@
     },
     "devDependencies": {
         "@types/amqplib": "^0.8.2",
-        "@types/jest": "^27.4.1",
+        "@types/jest": "^27.5.0",
         "@types/js-yaml": "^4.0.5",
         "@types/node": "^17.0.31",
         "@types/node-fetch": "^2.6.1",
