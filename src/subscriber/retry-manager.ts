@@ -2,6 +2,7 @@ import { Message } from 'amqplib';
 import { Channel } from 'amqplib-as-promised/lib';
 import { FastifyLoggerInstance } from 'fastify';
 import { SubscriberConfig } from '../config/yaml-config.types';
+import { SubscriberMetricsCollector } from '../metrics/metrics-collector.interfaces';
 import { BackoffStrategy } from './backoff-strategy';
 import { DeadLetterPolicy } from './dead-letter-policy';
 import { PushSender } from './push-sender';
@@ -21,13 +22,15 @@ export class RetryManager {
         protected readonly pushSender: PushSender,
         protected readonly logger: FastifyLoggerInstance,
         protected readonly calculateBackoff: BackoffStrategy,
-        protected readonly deadLetterPolicy: DeadLetterPolicy
+        protected readonly deadLetterPolicy: DeadLetterPolicy,
+        protected readonly metricsCollector: SubscriberMetricsCollector
     ) {}
     public planDeliveryRetry(msg: Message, attempt = 1) {
         if (attempt > this.config.retries) {
             this.logger.warn(
                 `Maximum number of delivery retries exceeded for message ID: ${msg.properties.messageId}, ${this.deadLetterPolicy.describeBehavior} message`
             );
+            this.metricsCollector.recordDeadMessage(this.config.queueName, this.config.target);
             this.deadLetterPolicy.handleDeadMessage(msg);
         } else {
             const plannedRetry: PlannedRetry = {

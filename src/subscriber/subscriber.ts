@@ -5,6 +5,7 @@ import { FastifyLoggerInstance } from 'fastify';
 import { SubscriberConfig } from '../config/yaml-config.types';
 import { PushSender } from './push-sender';
 import { RetryManager } from './retry-manager';
+import { SubscriberMetricsCollector } from '../metrics/metrics-collector.interfaces';
 
 const isURLValid = (u: string) => {
     try {
@@ -31,7 +32,8 @@ export class Subscriber {
         protected channel: Channel,
         protected logger: FastifyLoggerInstance,
         protected pushSender: PushSender,
-        protected retryManager: RetryManager
+        protected retryManager: RetryManager,
+        protected metricsCollector: SubscriberMetricsCollector
     ) {
         this.onDeliverySuccess = this.onDeliverySuccess.bind(this);
         this.onDeliveryFailure = this.onDeliveryFailure.bind(this);
@@ -103,6 +105,7 @@ export class Subscriber {
         this.logger.warn(
             `Message delivery failed, target: ${this.config.target}, message ID: ${msg.properties.messageId}, reason: ${reason}`
         );
+        this.metricsCollector.recordFailedDelivery(this.config.queueName, this.config.target);
         this.retryManager.planDeliveryRetry(msg, 1);
     }
 }

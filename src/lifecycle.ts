@@ -1,3 +1,4 @@
+import { MetricsServerInstance } from './metrics/metrics-server';
 import { Publisher } from './publisher/publisher';
 import { AppInstance } from './server';
 import { Subscriber } from './subscriber/subscriber';
@@ -16,6 +17,11 @@ function subscriberDeliveriesInFlight(subscribers: Array<Subscriber>): number {
         inFlightPushRequests += subscriber.inFlightPushRequests;
     }
     return inFlightPushRequests;
+}
+
+export function shutdownMetricsServer(app: AppInstance) {
+    app.log.info('Closing prometheus metrics server');
+    return app.metrics.close();
 }
 
 export async function gracefullyHandleSubscriberShutdown(app: AppInstance, retryDelay = 1000) {

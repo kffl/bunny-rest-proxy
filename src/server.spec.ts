@@ -5,8 +5,12 @@ import { buildEnvConfig } from './config/env-config';
 import fastify, { FastifyInstance } from 'fastify';
 import { sleep } from './lifecycle';
 import { PublisherContentTypes, YamlConfig } from './config/yaml-config.types';
+import { buildMetricsServer, MetricsServerInstance } from './metrics/metrics-server';
+import { MetricsCollector } from './metrics/metrics-collector';
 
 let app: AppInstance;
+let metricsServer: MetricsServerInstance;
+let metrics: MetricsCollector;
 const envConfig = buildEnvConfig({
     BRP_LOG_PRETTY: 'true',
     BRP_CONN_STR: 'amqp://guest:guest@localhost:5672?heartbeat=30',
@@ -59,13 +63,20 @@ const yamlConfig: YamlConfig = {
             contentType: PublisherContentTypes.BINARY,
             confirm: true,
             identities: ['Bob']
+        },
+        {
+            queueName: 'metrics-test',
+            contentType: PublisherContentTypes.BINARY,
+            confirm: true,
+            identities: []
         }
     ],
     consumers: [
         { queueName: 'nonconfirm', identities: [] },
         { queueName: 'binaryq', identities: [] },
         { queueName: 'binarytestdiscard', identities: [] },
-        { queueName: 'auth', identities: ['Alice'] }
+        { queueName: 'auth', identities: ['Alice'] },
+        { queueName: 'metrics-test', identities: [] }
     ],
     subscribers: [
         {
@@ -144,8 +155,10 @@ function buildTestTarget() {
 
 describe('bunny-rest-proxy instance', () => {
     beforeAll(() => {
-        app = buildApp(envConfig, yamlConfig);
-        return app.listen(3672, '0.0.0.0');
+        metricsServer = buildMetricsServer();
+        metrics = new MetricsCollector(metricsServer);
+        app = buildApp(envConfig, yamlConfig, metrics);
+        return Promise.all([metricsServer.listen(9672, '0.0.0.0'), app.listen(3672, '0.0.0.0')]);
     });
 
     beforeEach(() => {
@@ -160,6 +173,11 @@ describe('bunny-rest-proxy instance', () => {
 
     it('should have / endpoint', async () => {
         const response = await supertest(app.server).get('/');
+        expect(response.status).toEqual(200);
+    });
+
+    it('should expose a metrics endpoint', async () => {
+        const response = await supertest(app.metrics.server.server).get('/metrics');
         expect(response.status).toEqual(200);
     });
 
@@ -328,6 +346,7 @@ describe('bunny-rest-proxy instance', () => {
             .set('content-type', 'application/octet-stream')
             .set('X-Bunny-CorrelationID', 'fail-dont-retry-nack-reprocess');
         await sleep(3000);
+        const metricsResponse = await supertest(app.metrics.server.server).get('/metrics');
         expect(response.status).toEqual(201);
         expect(targetReqHandler).toHaveBeenCalledTimes(2);
         expect(targetReqHandler.mock.calls[1][0]).toEqual(Buffer.from('payload'));
@@ -336,6 +355,13 @@ describe('bunny-rest-proxy instance', () => {
             'x-bunny-correlationid': 'fail-dont-retry-nack-reprocess',
             'x-bunny-redelivered': 'true'
         });
+        expect(metricsResponse.statusCode).toEqual(200);
+        expect(metricsResponse.text).toContain(
+            `subscriber_failed_messages{queue="binarytest",target="http://localhost:5555/target"} 1`
+        );
+        expect(metricsResponse.text).toContain(
+            `subscriber_dead_messages{queue="binarytest",target="http://localhost:5555/target"} 1`
+        );
     });
 
     it('should discard a message message after exceeding the delivery attempts limit', async () => {
@@ -350,6 +376,40 @@ describe('bunny-rest-proxy instance', () => {
         expect(targetReqHandler).toHaveBeenCalledTimes(1);
         const getResponse = await supertest(app.server).get('/consume/binarytestdiscard');
         expect(getResponse.status).toEqual(423);
+    });
+
+    it('record publisher and consumer latency histogram', async () => {
+        app.metrics.reset();
+        await supertest(app.server)
+            .post('/publish/metrics-test')
+            .send('message content')
+            .set('content-type', 'application/octet-stream');
+        await supertest(app.server)
+            .post('/publish/metrics-test')
+            .send('message content 2')
+            .set('content-type', 'application/octet-stream');
+        await supertest(app.server).get('/consume/metrics-test');
+        await supertest(app.server).get('/consume/metrics-test');
+
+        const metricsResponse = await supertest(app.metrics.server.server).get('/metrics');
+
+        expect(metricsResponse.statusCode).toEqual(200);
+        expect(metricsResponse.text).toContain(
+            `publisher_latency_bucket{le="+Inf",queue="metrics-test",status="201"} 2`
+        );
+        expect(metricsResponse.text).toContain(
+            `publisher_latency_bucket{le="1.024",queue="metrics-test",status="201"} 2`
+        );
+        expect(metricsResponse.text).toContain(
+            `publisher_latency_count{queue="metrics-test",status="201"} 2`
+        );
+
+        expect(metricsResponse.text).toContain(
+            `consumer_latency_bucket{le="+Inf",queue="metrics-test",status="205"} 2`
+        );
+        expect(metricsResponse.text).toContain(
+            `consumer_latency_count{queue="metrics-test",status="205"} 2`
+        );
     });
 
     it('should exit gracefully', async () => {

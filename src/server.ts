@@ -9,8 +9,10 @@ import { Consumer } from './consumer/consumer';
 import {
     gracefullyHandleSubscriberShutdown,
     handleChannelClose,
-    handleConnectionClose
+    handleConnectionClose,
+    shutdownMetricsServer
 } from './lifecycle';
+import { MetricsCollector } from './metrics/metrics-collector';
 import { registerPublishers } from './publisher/build-publisher';
 import { Publisher } from './publisher/publisher';
 import { registerSubscribers } from './subscriber/build-subscriber';
@@ -34,10 +36,15 @@ declare module 'fastify' {
          * Error shutdown occurs when an AMQP channel or connection is closed unexpectedly.
          */
         errorShutdown: boolean;
+        metrics: MetricsCollector;
     }
 }
 
-function buildApp(envConfig: EnvConfig, yamlConfig: YamlConfig): AppInstance {
+function buildApp(
+    envConfig: EnvConfig,
+    yamlConfig: YamlConfig,
+    metrics: MetricsCollector
+): AppInstance {
     const app: FastifyInstance<Server, IncomingMessage, ServerResponse> = fastify({
         logger: {
             prettyPrint: envConfig.prettyPrint
@@ -55,6 +62,7 @@ function buildApp(envConfig: EnvConfig, yamlConfig: YamlConfig): AppInstance {
     app.decorate('identities', yamlConfig.identities);
     app.decorate('pendingShutdown', false);
     app.decorate('errorShutdown', false);
+    app.decorate('metrics', metrics);
 
     app.get('/', (req, res) => {
         res.send(`Hello from Bunny REST Proxy`);
@@ -75,13 +83,13 @@ function buildApp(envConfig: EnvConfig, yamlConfig: YamlConfig): AppInstance {
         ignoreOnClose: true
     }).after((err) => {
         if (err) {
-            app.log.fatal(`Error connecting to RabbitMQ, message: ${(err as Error)?.message}`);
+            app.log.fatal(`Error connecting to RabbitMQ, message: ${err.message}`);
             process.exit(1);
         }
 
-        registerPublishers(yamlConfig.publishers, app);
-        registerConsumers(yamlConfig.consumers, app);
-        registerSubscribers(yamlConfig.subscribers, app);
+        registerPublishers(yamlConfig.publishers, app, metrics);
+        registerConsumers(yamlConfig.consumers, app, metrics);
+        registerSubscribers(yamlConfig.subscribers, app, metrics);
     });
 
     app.addHook('onReady', async () => {
@@ -104,7 +112,10 @@ function buildApp(envConfig: EnvConfig, yamlConfig: YamlConfig): AppInstance {
     });
 
     app.addHook('onClose', async () => {
-        await gracefullyHandleSubscriberShutdown(app);
+        await Promise.allSettled([
+            gracefullyHandleSubscriberShutdown(app),
+            shutdownMetricsServer(app)
+        ]);
     });
 
     app.after(() => {

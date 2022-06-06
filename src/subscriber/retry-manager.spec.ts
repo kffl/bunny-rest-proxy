@@ -7,6 +7,7 @@ import { DeadLetterPolicy } from './dead-letter-policy';
 import { PushSender } from './push-sender';
 import { RetryManager } from './retry-manager';
 import { sleep } from '../lifecycle';
+import { SubscriberMetricsCollector } from '../metrics/metrics-collector.interfaces';
 
 describe('retry manager', () => {
     const config = {
@@ -19,6 +20,7 @@ describe('retry manager', () => {
     const logger = mock<FastifyLoggerInstance>();
     const channel = mock<Channel>();
     const sender = mock<PushSender>();
+    const metricsCollector = mock<SubscriberMetricsCollector>();
 
     beforeEach(() => {
         mockClear(deadLetterPolicy);
@@ -34,7 +36,8 @@ describe('retry manager', () => {
             sender,
             logger,
             backoffStrategy,
-            deadLetterPolicy
+            deadLetterPolicy,
+            metricsCollector
         );
         const message = mock<Message>();
         retryManager.planDeliveryRetry(message);
@@ -55,7 +58,8 @@ describe('retry manager', () => {
             sender,
             logger,
             backoffStrategy,
-            deadLetterPolicy
+            deadLetterPolicy,
+            metricsCollector
         );
         const message = mock<Message>();
         //@ts-ignore
@@ -74,7 +78,8 @@ describe('retry manager', () => {
             sender,
             logger,
             backoffStrategy,
-            deadLetterPolicy
+            deadLetterPolicy,
+            metricsCollector
         );
         const message = mock<Message>();
         sender.pushMessage.mockRejectedValueOnce({ name: 'SomeError', message: 'Some message' });
@@ -93,7 +98,8 @@ describe('retry manager', () => {
             sender,
             logger,
             backoffStrategy,
-            deadLetterPolicy
+            deadLetterPolicy,
+            metricsCollector
         );
         const message = mock<Message>();
         //@ts-ignore
@@ -104,5 +110,21 @@ describe('retry manager', () => {
 
         expect(retryManager.plannedRetries.size).toEqual(0);
         expect(sender.pushMessage).toHaveBeenCalledTimes(2);
+    });
+
+    it('should hand the message over to the dead letter policy implementation when it exceeds the maximum number of delivery retries', () => {
+        const retryManager = new RetryManager(
+            config,
+            channel,
+            sender,
+            logger,
+            backoffStrategy,
+            deadLetterPolicy,
+            metricsCollector
+        );
+        const message = mock<Message>();
+        retryManager.planDeliveryRetry(message, 6);
+        expect(deadLetterPolicy.handleDeadMessage).toHaveBeenCalledTimes(1);
+        expect(metricsCollector.recordDeadMessage).toHaveBeenCalledTimes(1);
     });
 });
