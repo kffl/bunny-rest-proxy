@@ -43,7 +43,7 @@ export function registerPublishers(
                 const completed = metricsCollector.startPublisherTimer(publisher.queueName);
                 try {
                     identityGuard.verifyRequest(req);
-                    const result = publisher.sendMessage(req.headers, req.body, req.log);
+                    const result = await publisher.sendMessage(req.headers, req.body, req.log);
                     res.status(201);
                     completed({ status: 201 });
                     return result;
