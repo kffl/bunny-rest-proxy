@@ -58,7 +58,7 @@
                     "enum": [
                         "requeue",
                         "discard",
-                        "dql"
+                        "dlq"
                     ],
                     "type": "string"
                 },
